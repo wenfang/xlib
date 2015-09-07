@@ -8,8 +8,11 @@ all:$(OBJS) $(LUA_DIR)/src/liblua.a
 xstring: xstring.c xmalloc.c xstring.h xmalloc.h
 	gcc -g -D__XSTRING_TEST xstring.c xmalloc.c -o xstring
 
+xlist: xlist.c xlist.h xmalloc.c xmalloc.h
+	gcc -g -D__XLIST_TEST xlist.c xmalloc.c -o xlist
+
 clean:
 	rm -rf *.o
-	rm -rf xstring
+	rm -rf xstring xlist
 
-.PHONY: all xstring clean
+.PHONY: all xstring xlist clean
