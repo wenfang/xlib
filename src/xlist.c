@@ -22,6 +22,44 @@ void xlist_free(xlist *list) {
   xfree(list);
 }
 
+xlist* xlist_AddNodeHead(xlist* list, void *value) {
+  xlistNode* node;
+  node = xmalloc(sizeof(xlistNode));
+  if (node == NULL) return NULL; 
+  node->value = value;
+  
+  if (list->len == 0) {
+    list->head = list->tail = node;
+    node->prev = node->next = NULL;
+  } else {
+    node->prev = NULL;
+    node->next = list->head;
+    list->head->prev = node;
+    list->head = node;
+  }
+  list->len++;
+  return list;
+}
+
+xlist* xlist_AddNodeTail(xlist* list, void *value) {
+  xlistNode* node;
+  node = xmalloc(sizeof(xlistNode));
+  if (node == NULL) return NULL; 
+  node->value = value;
+
+  if (list->len == 0) {
+    list->head = list->tail = node;
+    node->prev = node->next = NULL;
+  } else {
+    node->prev = list->tail;
+    node->next = NULL;
+    list->tail->next = node;
+    list->tail = node;
+  }
+  list->len++;
+  return list;
+}
+
 #ifdef __XLIST_TEST
 
 #include "xunittest.h"
