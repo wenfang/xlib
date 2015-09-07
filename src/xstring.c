@@ -73,6 +73,27 @@ xstring xstring_catlen(xstring s, const void* t, size_t len) {
   return s;
 }
 
+xstring xstring_cat(xstring s, const char* t) {
+  return xstring_catlen(s, t, strlen(t));
+}
+
+xstring xstring_cpylen(xstring s, const void* t, size_t len) {
+  xstring_hdr* sh = (void*)(s - sizeof(xstring_hdr));
+  if (sh->size < len) {
+    s = grow(s, len - sh->len);
+    if (s == NULL) return NULL;
+    sh = (void*)(s - sizeof(xstring_hdr));
+  }
+  memcpy(s, t, len);
+  sh->len = len;
+  sh->data[sh->len] = '\0';
+  return s;
+}
+
+xstring xstring_cpy(xstring s, const char* t) {
+  return xstring_cpylen(s, t, strlen(t));
+}
+
 #ifdef __XSTRING_TEST
 
 #include "xunittest.h"
@@ -81,10 +102,19 @@ int main(void) {
   xstring s = xstring_new("init");
   XTEST_EQ(xstring_len(s), 4);  
 
-  xstring_catlen(s, "other", 5);
+  s = xstring_catlen(s, "other", 5);
   XTEST_EQ(xstring_len(s), 9);
   XTEST_STRING_EQ(s, "initother"); 
 
+  s = xstring_cat(s, "abc");
+  XTEST_EQ(xstring_len(s), 12);
+  XTEST_STRING_EQ(s, "initotherabc");
+
+  s = xstring_cpy(s, "abcdefghijklmnopqrst");
+  XTEST_EQ(xstring_len(s), 20);
+  XTEST_STRING_EQ(s, "abcdefghijklmnopqrst");
+
+  xstring_free(s);
   return 0;
 }
 

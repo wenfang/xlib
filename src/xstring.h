@@ -23,5 +23,9 @@ xstring xstring_dup(xstring s);
 void xstring_free(xstring s);
 
 xstring xstring_catlen(xstring s, const void* t, size_t len);
+xstring xstring_cat(xstring s, const char* t);
+
+xstring xstring_cpylen(xstring s, const void* t, size_t len);
+xstring xstring_cpy(xstring s, const char* t);
 
 #endif
