@@ -94,6 +94,61 @@ xstring xstring_cpy(xstring s, const char* t) {
   return xstring_cpylen(s, t, strlen(t));
 }
 
+xstring* xstring_split(xstring s, const char* sep, int* count) {
+  int slots = 5;
+  xstring* token = xmalloc(sizeof(xstring)*slots);
+  if (token == NULL) return token;
+
+  xstring* newtoken;
+  int i, start = 0;
+  size_t total = xstring_len(s);
+
+  *count = 0;
+  while (start < total) {
+    char* point = strstr(s + start, sep);
+    if (!point) break;
+    if (point != s + start) {
+      token[*count] = xstring_newlen(s + start, point - s - start);
+      (*count)++;
+      if (*count >= slots) {
+        slots = slots * 3 / 2;
+        newtoken = xrealloc(token, sizeof(xstring)*slots);
+        if (newtoken == NULL) goto err_out;
+        token = newtoken;
+      }
+    }
+    start = point - s + strlen(sep);
+  }
+
+  if (total != start) {
+    token[*count] = xstring_newlen(s + start, total - start);
+    (*count)++;
+    if (*count >= slots) {
+        slots = slots * 3 / 2;
+        newtoken = xrealloc(token, sizeof(xstring)*slots);
+        if (newtoken == NULL) goto err_out;
+        token = newtoken;
+    }
+  }
+  return token;
+
+err_out:
+  for (i=0; i<*count; i++) {
+    xstring_free(token[*count]);
+  }
+  xfree(token);
+  *count = 0;
+  return NULL; 
+}
+
+void xstrings_free(xstring* s, int count) {
+  int i;
+  for (i=0; i<count; i++) {
+    xstring_free(s[i]);
+  }
+  xfree(s);
+}
+
 #ifdef __XSTRING_TEST
 
 #include "xunittest.h"
@@ -114,6 +169,20 @@ int main(void) {
   XTEST_EQ(xstring_len(s), 20);
   XTEST_STRING_EQ(s, "abcdefghijklmnopqrst");
 
+  s = xstring_cpy(s, " this is    a test another   string");
+
+  xstring* ss;
+  int count;
+  ss = xstring_split(s, " ", &count);
+  XTEST_EQ(count, 6);
+  XTEST_STRING_EQ(ss[0], "this");
+  XTEST_STRING_EQ(ss[1], "is");
+  XTEST_STRING_EQ(ss[2], "a");
+  XTEST_STRING_EQ(ss[3], "test");
+  XTEST_STRING_EQ(ss[4], "another");
+  XTEST_STRING_EQ(ss[5], "string");
+
+  xstrings_free(ss, count);
   xstring_free(s);
   return 0;
 }

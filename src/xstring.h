@@ -28,4 +28,7 @@ xstring xstring_cat(xstring s, const char* t);
 xstring xstring_cpylen(xstring s, const void* t, size_t len);
 xstring xstring_cpy(xstring s, const char* t);
 
+xstring* xstring_split(xstring s, const char* sep, int* count);
+void xstrings_free(xstring* s, int count);
+
 #endif
