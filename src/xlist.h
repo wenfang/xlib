@@ -29,5 +29,9 @@ typedef struct xlist {
 xlist* xlist_new(void);
 void xlist_free(xlist *list);
 
+xlist* xlist_AddNodeHead(xlist* list, void *value);
+xlist* xlist_AddNodeTail(xlist* list, void *value);
+xlist* xlist_InsertNode(xlist* list, xlistNode* old_node, void* value, int after);
+void xlist_DelNode(xlist* list, xlistNode* node);
 
 #endif

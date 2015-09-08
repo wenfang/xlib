@@ -6,6 +6,7 @@ xlist* xlist_new(void) {
   if (list == NULL) return NULL;
   list->head = list->tail = NULL;
   list->len = 0;
+  list->free = NULL;
   return list;
 }
 
@@ -17,6 +18,7 @@ void xlist_free(xlist *list) {
   while (len--) {
     next = current->next; 
     if (list->free) list->free(current->value);
+    xfree(current);
     current = next;
   }
   xfree(list);
@@ -60,11 +62,59 @@ xlist* xlist_AddNodeTail(xlist* list, void *value) {
   return list;
 }
 
+xlist* xlist_InsertNode(xlist* list, xlistNode* old_node, void* value, int after) {
+  xlistNode *node;
+  node = xmalloc(sizeof(xlistNode));
+  if (node == NULL) return NULL;
+  node->value = value;
+
+  if (after) {
+    node->prev = old_node;
+    node->next = old_node->next;
+    if (list->tail == old_node) {
+      list->tail = node;
+    }
+  } else {
+    node->next = old_node;
+    node->prev = old_node->prev;
+    if (list->head == old_node) {
+      list->head = node;
+    }
+  }
+
+  if (node->prev != NULL) {
+    node->prev->next = node;
+  }
+  if (node->next != NULL) {
+    node->next->prev = node;
+  }
+  list->len++;
+  return list;
+}
+
+void xlist_DelNode(xlist *list, xlistNode *node) {
+  if (node->prev) {
+    node->prev->next = node->next;
+  } else {
+    list->head = node->next;
+  }
+
+  if (node->next) {
+    node->next->prev = node->prev;
+  } else {
+    list->tail = node->prev;
+  }
+}
+
 #ifdef __XLIST_TEST
 
 #include "xunittest.h"
 
 int main(void) {
+  xlist* list = xlist_new();
+  list = xlist_AddNodeHead(list, NULL);
+  list = xlist_InsertNode(list, xlistFirst(list), NULL, 1);
+  xlist_free(list);
   return 0;
 }
 
