@@ -125,17 +125,27 @@ static void __xtask_init(void) {
 void foo(void *arg1, void *arg2) {
   xtask* task = arg1;
   task->flags |= XTASK_TIMEOUT;
-  printf("foo called %d\n", task->flags);
+  XTEST_EQ(task->flags, XTASK_TIMEOUT); 
   task->flags &= ~XTASK_TIMEOUT;
-  printf("foo called %d\n", task->flags);
+  XTEST_EQ(task->flags, 0);
+}
+
+void bar(void *arg1, void *arg2) {
+  xtask* task = arg1;
+  XTEST_EQ(task->flags, XTASK_TIMEOUT); 
 }
 
 int main(void) {
-  xtask task;
-  xtask_init(&task);
-  task.handler = XHANDLER(foo, &task, NULL);
-  xtask_enqueue(&task);
+  xtask task1, task2;
+  xtask_init(&task1);
+  xtask_init(&task2);
+  task1.handler = XHANDLER(foo, &task1, NULL);
+  task2.handler = XHANDLER(bar, &task2, NULL);
+  xtask_enqueue(&task1);
+  xtask_enqueue_timeout(&task2, 200);
+  sleep(1);
   xtask_process();
   return 0;
 }
+
 #endif
