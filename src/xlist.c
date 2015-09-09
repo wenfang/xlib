@@ -24,8 +24,8 @@ void xlist_free(xlist *list) {
   xfree(list);
 }
 
-xlist* xlist_AddNodeHead(xlist* list, void *value) {
-  xlistNode* node;
+xlist* xlist_AddNodeHead(xlist *list, void *value) {
+  xlistNode *node;
   node = xmalloc(sizeof(xlistNode));
   if (node == NULL) return NULL; 
   node->value = value;
@@ -43,8 +43,8 @@ xlist* xlist_AddNodeHead(xlist* list, void *value) {
   return list;
 }
 
-xlist* xlist_AddNodeTail(xlist* list, void *value) {
-  xlistNode* node;
+xlist* xlist_AddNodeTail(xlist *list, void *value) {
+  xlistNode *node;
   node = xmalloc(sizeof(xlistNode));
   if (node == NULL) return NULL; 
   node->value = value;
@@ -62,7 +62,7 @@ xlist* xlist_AddNodeTail(xlist* list, void *value) {
   return list;
 }
 
-xlist* xlist_InsertNode(xlist* list, xlistNode* old_node, void* value, int after) {
+xlist* xlist_InsertNode(xlist *list, xlistNode *old_node, void *value, int after) {
   xlistNode *node;
   node = xmalloc(sizeof(xlistNode));
   if (node == NULL) return NULL;
@@ -106,12 +106,15 @@ void xlist_DelNode(xlist *list, xlistNode *node) {
   }
 }
 
+xlistIter* xlist_newIterator(xlist *list, int direction) {
+}
+
 #ifdef __XLIST_TEST
 
 #include "xunittest.h"
 
 int main(void) {
-  xlist* list = xlist_new();
+  xlist *list = xlist_new();
   list = xlist_AddNodeHead(list, NULL);
   list = xlist_InsertNode(list, xlistFirst(list), NULL, 1);
   xlist_free(list);

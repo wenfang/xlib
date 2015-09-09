@@ -11,8 +11,11 @@ xstring: xstring.c xmalloc.c xstring.h xmalloc.h
 xlist: xlist.c xlist.h xmalloc.c xmalloc.h
 	gcc -g -D__XLIST_TEST xlist.c xmalloc.c -o xlist
 
+xtask: xtask.c xtask.h rbtree.c rbtree.h
+	gcc -g -D__XTASK_TEST xtask.c rbtree.c -o xtask
+
 clean:
 	rm -rf *.o
-	rm -rf xstring xlist
+	rm -rf xstring xlist xtask
 
-.PHONY: all xstring xlist clean
+.PHONY: all xstring xlist xtask clean
