@@ -16,22 +16,22 @@ typedef struct xtask_s {
   struct list_head  _task_node;
   unsigned          _deadline;
   unsigned          _status;
-} xtask_t __attribute__((aligned(sizeof(long))));
+} xtask __attribute__((aligned(sizeof(long))));
 
 extern void
-xtask_init(xtask_t *task);
+xtask_init(xtask *task);
 
 extern bool
 xtask_empty(void);
 
 extern void
-xtask_enqueue(xtask_t *task);
+xtask_enqueue(xtask *task);
 
 extern void
-xtask_enqueue_timeout(xtask_t *task, unsigned long ms);
+xtask_enqueue_timeout(xtask *task, unsigned long ms);
 
 extern void
-xtask_dequeue(xtask_t *task);
+xtask_dequeue(xtask *task);
 
 extern void
 xtask_process(void);

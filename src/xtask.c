@@ -12,7 +12,7 @@ static LIST_HEAD(task_head);
 static struct rb_root timer_head;
 
 void
-xtask_init(xtask_t *task) {
+xtask_init(xtask *task) {
   ASSERT(task);
   task->handler   = XHANDLER_EMPTY;
   task->flags     = 0;
@@ -28,7 +28,7 @@ xtask_empty(void) {
 }
 
 void
-xtask_enqueue(xtask_t *task) {
+xtask_enqueue(xtask *task) {
   ASSERT(task);
   if (task->_status == XTASK_QUEUE) return;
   if (task->_status == XTASK_TIMER) {
@@ -45,7 +45,7 @@ xtask_enqueue(xtask_t *task) {
 }
 
 void
-xtask_enqueue_timeout(xtask_t *task, unsigned long ms) {
+xtask_enqueue_timeout(xtask *task, unsigned long ms) {
   ASSERT(task);
   if (task->_status == XTASK_QUEUE) return;
   if (task->_status == XTASK_TIMER) {
@@ -56,7 +56,7 @@ xtask_enqueue_timeout(xtask_t *task, unsigned long ms) {
   task->flags &= ~XTASK_TIMEOUT;
   struct rb_node **new = &timer_head.rb_node, *parent = NULL;
   while (*new) {
-    xtask_t* curr = rb_entry(*new, xtask_t, _timer_node);
+    xtask* curr = rb_entry(*new, xtask, _timer_node);
     parent = *new;
     if (task->_deadline < curr->_deadline) {
       new = &((*new)->rb_left);
@@ -70,7 +70,7 @@ xtask_enqueue_timeout(xtask_t *task, unsigned long ms) {
 }
 
 void
-xtask_dequeue(xtask_t* task) {
+xtask_dequeue(xtask* task) {
   ASSERT(task);
   if (task->_status == XTASK_FREE) return;
   if (task->_status == XTASK_QUEUE) {
@@ -90,7 +90,7 @@ xtask_process(void) {
     // check timer list
     struct rb_node* first = rb_first(&timer_head);
     while (first) {
-      xtask_t* task = rb_entry(first, xtask_t, _timer_node);
+      xtask* task = rb_entry(first, xtask, _timer_node);
       if (task->_deadline > curr_time) break;
       ASSERT(task->_status == XTASK_TIMER);
       rb_erase(&task->_timer_node, &timer_head);
@@ -104,7 +104,7 @@ xtask_process(void) {
   }
   // run task
   while (!list_empty(&task_head)) {
-    xtask_t* task = list_first_entry(&task_head, xtask_t, _task_node);
+    xtask* task = list_first_entry(&task_head, xtask, _task_node);
     if (!task) break;
     ASSERT(task->_status == XTASK_QUEUE);
     list_del_init(&task->_task_node);
@@ -113,19 +113,29 @@ xtask_process(void) {
   }
 }
 
-/*
-static bool
-task_module_init(spe_cycle_t *cycle) {
+__attribute__((constructor))
+static void __xtask_init(void) {
   timer_head = RB_ROOT;
-  return true;
 }
-*/
 
 #ifdef __XTASK_TEST
 
 #include "xunittest.h"
 
+void foo(void *arg1, void *arg2) {
+  xtask* task = arg1;
+  task->flags |= XTASK_TIMEOUT;
+  printf("foo called %d\n", task->flags);
+  task->flags &= ~XTASK_TIMEOUT;
+  printf("foo called %d\n", task->flags);
+}
+
 int main(void) {
+  xtask task;
+  xtask_init(&task);
+  task.handler = XHANDLER(foo, &task, NULL);
+  xtask_enqueue(&task);
+  xtask_process();
   return 0;
 }
 #endif
