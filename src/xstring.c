@@ -6,11 +6,11 @@
 
 xstring
 xstring_newlen(const void* init, size_t initlen) {
-  xstring_hdr *sh;
+  xstring_hdr_t *sh;
   if (init) {
-    sh = xmalloc(sizeof(xstring_hdr) + initlen + 1);
+    sh = xmalloc(sizeof(xstring_hdr_t) + initlen + 1);
   } else {
-    sh = xcalloc(sizeof(xstring_hdr) + initlen + 1);
+    sh = xcalloc(sizeof(xstring_hdr_t) + initlen + 1);
   }
   if (sh == NULL) return NULL;
   sh->len = initlen;
@@ -41,11 +41,11 @@ xstring_dup(xstring s) {
 void
 xstring_free(xstring s) {
   if (s == NULL) return;
-  xfree(s - sizeof(xstring_hdr));
+  xfree(s - sizeof(xstring_hdr_t));
 }
 
 static inline size_t xstring_avail(xstring s) {
-  xstring_hdr* sh = (void*)(s - sizeof(xstring_hdr));
+  xstring_hdr_t* sh = (void*)(s - sizeof(xstring_hdr_t));
   return sh->size - sh->len;
 }
 
@@ -54,9 +54,9 @@ grow(xstring s, size_t addlen) {
   size_t free = xstring_avail(s);
   if (free >= addlen) return s;
 
-  xstring_hdr* sh = (void*)(s - sizeof(xstring_hdr));
+  xstring_hdr_t* sh = (void*)(s - sizeof(xstring_hdr_t));
   size_t newsize = 25 * (xstring_len(s) + addlen) / 16;
-  xstring_hdr* newsh = xrealloc(sh, sizeof(xstring_hdr) + newsize + 1);
+  xstring_hdr_t* newsh = xrealloc(sh, sizeof(xstring_hdr_t) + newsize + 1);
   if (newsh == NULL) return NULL;
   newsh->size = newsize;
   return (char*)newsh->data;
@@ -66,7 +66,7 @@ xstring xstring_catlen(xstring s, const void* t, size_t len) {
   s = grow(s, len);
   if (s == NULL) return NULL;
 
-  xstring_hdr* sh = (void*)(s - sizeof(xstring_hdr));
+  xstring_hdr_t* sh = (void*)(s - sizeof(xstring_hdr_t));
   memcpy(s + sh->len, t, len); 
   sh->len += len;
   sh->data[sh->len] = '\0';
@@ -78,11 +78,11 @@ xstring xstring_cat(xstring s, const char* t) {
 }
 
 xstring xstring_cpylen(xstring s, const void* t, size_t len) {
-  xstring_hdr* sh = (void*)(s - sizeof(xstring_hdr));
+  xstring_hdr_t* sh = (void*)(s - sizeof(xstring_hdr_t));
   if (sh->size < len) {
     s = grow(s, len - sh->len);
     if (s == NULL) return NULL;
-    sh = (void*)(s - sizeof(xstring_hdr));
+    sh = (void*)(s - sizeof(xstring_hdr_t));
   }
   memcpy(s, t, len);
   sh->len = len;
@@ -92,6 +92,35 @@ xstring xstring_cpylen(xstring s, const void* t, size_t len) {
 
 xstring xstring_cpy(xstring s, const char* t) {
   return xstring_cpylen(s, t, strlen(t));
+}
+
+void xstring_range(xstring s, int start, int end) {
+  xstring_hdr_t* sh = (void*)(s - sizeof(xstring_hdr_t));
+  size_t newlen, len = xstring_len(s);
+  
+  if (len == 0) return;
+  if (start < 0) {
+    start = len + start;
+    if (start < 0) start = 0;
+  }
+  if (end < 0) {
+    end = len + end;
+    if (end < 0) end = 0;
+  }
+  newlen = (start > end) ? 0 : (end-start)+1;
+  if (newlen != 0) {
+    if (start >= (signed)len) {
+      newlen = 0;
+    } else if (end >= (signed)len) {
+      end = len-1;
+      newlen = (start > end)?0:(end-start)+1;
+    }
+  } else {
+    start = 0;
+  }
+  if (start && newlen) memmove(sh->data, sh->data+start, newlen);
+  sh->data[newlen] = 0;
+  sh->len = newlen;
 }
 
 xstring* xstring_split(xstring s, const char* sep, int* count) {
@@ -168,6 +197,9 @@ int main(void) {
   s = xstring_cpy(s, "abcdefghijklmnopqrst");
   XTEST_EQ(xstring_len(s), 20);
   XTEST_STRING_EQ(s, "abcdefghijklmnopqrst");
+
+  xstring_range(s, 3, -2);
+  XTEST_STRING_EQ(s, "defghijklmnopqrs");
 
   s = xstring_cpy(s, " this is    a test another   string");
 
