@@ -37,9 +37,9 @@ static int readcommon(xio_t* io, xstring* s) {
     } else if (io->_rtype == XIO_READUNTIL) {
       char* pos = strstr(io->_rbuf, io->_delim);
       if (pos != NULL) {
-        unsigned len = pos - io->_rbuf + strlen(io->_delim);
+        unsigned len = pos - io->_rbuf;
         *s = xstring_catlen(*s, io->_rbuf, len);
-        xstring_range(io->_rbuf, len, -1);
+        xstring_range(io->_rbuf, len + strlen(io->_delim), -1);
         io->_rtype = XIO_READNONE;
         return len;
       }
@@ -167,6 +167,36 @@ void xio_free(xio_t *io) {
 int main(void) {
   xio_t* io = xio_newfile("testdata/xio_test");
   if (io == NULL) XTEST_EQ(0, 1);
+  xstring s = xstring_new("this is  a test");
+  xio_write(io, s);
+  xio_flush(io);
+  xio_free(io);
+
+  io = xio_newfile("testdata/xio_test");
+  if (io == NULL) XTEST_EQ(0, 1);
+
+  xstring_clean(s);
+  xio_readuntil(io, " ", &s);
+  XTEST_STRING_EQ(s, "this");
+
+  xstring_clean(s);
+  xio_readuntil(io, " ", &s);
+  XTEST_STRING_EQ(s, "is");
+
+  xstring_clean(s);
+  xio_readuntil(io, " ", &s);
+  XTEST_STRING_EQ(s, "");
+
+  xstring_clean(s);
+  xio_readuntil(io, " ", &s);
+  XTEST_STRING_EQ(s, "a");
+
+  xstring_clean(s);
+  xio_readuntil(io, " ", &s);
+  XTEST_STRING_EQ(s, "test");
+
+  xstring_free(s);
+  xio_free(io);
   return 0;
 }
 
