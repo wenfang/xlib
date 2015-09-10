@@ -5,9 +5,6 @@ TEST_BIN=xstring xlist xtask xepoll xio
 .c.o:
 	gcc -DDEBUG -g -fPIC -std=gnu99 -I/usr/local/include -pthread -Wall -c $< -o $@
 
-all:$(OBJS) $(LUA_DIR)/src/liblua.a
-	gcc -g $(OBJS) $(LUA_DIR)/src/liblua.a -ldl -lm -lpthread -o spe
-
 test: $(TEST_BIN)
 
 xstring: xstring.c xmalloc.c xstring.h xmalloc.h
@@ -29,4 +26,4 @@ clean:
 	rm -rf *.o
 	rm -rf $(TEST_BIN)
 
-.PHONY: all test $(TEST_BIN) clean
+.PHONY: test $(TEST_BIN) clean

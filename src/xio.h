@@ -17,28 +17,15 @@ typedef struct xio_s {
   unsigned    _error:1;
 } xio_t __attribute__((aligned(sizeof(long))));
 
-extern int
-xio_read(xio_t *io, xstring s);
+int xio_read(xio_t *io, xstring* s);
+int xio_readbytes(xio_t *io, unsigned len, xstring* s);
+int xio_readuntil(xio_t *io, const char *delim, xstring* s);
 
-extern int  
-xio_readbytes(xio_t *io, unsigned len, xstring s);
+int xio_write(xio_t *io, xstring s);
+int xio_flush(xio_t *io);
 
-extern int  
-xio_readuntil(xio_t *io, const char *delim, xstring s);
-
-extern int
-xio_write(xio_t *io, xstring s);
-
-extern int
-xio_flush(xio_t *io);
-
-extern xio_t*
-xio_newfile(const char *fname);
-
-extern xio_t*
-xio_newfd(int fd);
-
-extern void
-xio_free(xio_t *io);
+xio_t* xio_newfile(const char *fname);
+xio_t* xio_newfd(int fd);
+void xio_free(xio_t *io);
 
 #endif

@@ -14,7 +14,7 @@
 #define XIO_READBYTES    2
 #define XIO_READUNTIL    3
 
-static int read_common(xio_t* io, xstring s) {
+static int readcommon(xio_t* io, xstring* s) {
   int res;
   char buf[BUF_LEN];
 
@@ -22,15 +22,15 @@ static int read_common(xio_t* io, xstring s) {
     if (io->_rtype == XIO_READ) {
       unsigned len = xstring_len(io->_rbuf);
       if (len > 0) {
-        xstring_catxs(s, io->_rbuf);
+        *s = xstring_catxs(*s, io->_rbuf);
         xstring_clean(io->_rbuf);
         io->_rtype = XIO_READNONE;
         return len;
       }
     } else if (io->_rtype == XIO_READBYTES) {
       if (io->_rbytes <= xstring_len(io->_rbuf)) {
-        xstring_catlen(s, io->_rbuf, io->_rbytes);
-        xstring_range(s, io->_rbytes, -1);
+        *s = xstring_catlen(*s, io->_rbuf, io->_rbytes);
+        xstring_range(*s, io->_rbytes, -1);
         io->_rtype = XIO_READNONE;
         return io->_rbytes;
       }
@@ -38,7 +38,7 @@ static int read_common(xio_t* io, xstring s) {
       char* pos = strstr(io->_rbuf, io->_delim);
       if (pos != NULL) {
         unsigned len = pos - io->_rbuf + strlen(io->_delim);
-        xstring_catlen(s, io->_rbuf, len);
+        *s = xstring_catlen(*s, io->_rbuf, len);
         xstring_range(io->_rbuf, len, -1);
         io->_rtype = XIO_READNONE;
         return len;
@@ -54,42 +54,42 @@ static int read_common(xio_t* io, xstring s) {
       io->_closed = 1;
       break;
     }
-    xstring_catlen(io->_rbuf, buf, res);
+    io->_rbuf = xstring_catlen(io->_rbuf, buf, res);
   }
   // read error copy data
-  xstring_catxs(s, io->_rbuf);
+  *s = xstring_catxs(*s, io->_rbuf);
   xstring_clean(io->_rbuf);
   io->_rtype = XIO_READNONE;
   return res;
 }
 
-int xio_read(xio_t* io, xstring s) {
+int xio_read(xio_t* io, xstring* s) {
   ASSERT(io && s);
   if (io->_closed) return XIO_CLOSED;
   if (io->_error) return XIO_ERROR;
 
   io->_rtype  = XIO_READ;
-  return read_common(io, s);
+  return readcommon(io, s);
 }
 
-int xio_readbytes(xio_t* io, unsigned len, xstring s) {
+int xio_readbytes(xio_t* io, unsigned len, xstring* s) {
   ASSERT(io && len && s);
   if (io->_closed) return XIO_CLOSED;
   if (io->_error) return XIO_ERROR;
 
   io->_rtype  = XIO_READBYTES;
   io->_rbytes = len;
-  return read_common(io, s);
+  return readcommon(io, s);
 }
 
-int xio_readuntil(xio_t* io, const char* delim, xstring s) {  
+int xio_readuntil(xio_t* io, const char* delim, xstring* s) {  
   ASSERT(io && delim && s);
   if (io->_closed) return XIO_CLOSED;
   if (io->_error) return XIO_ERROR;
 
   io->_rtype = XIO_READUNTIL;
   io->_delim = delim;
-  return read_common(io, s);
+  return readcommon(io, s);
 }
 
 int xio_write(xio_t *io, xstring s) {
@@ -165,6 +165,8 @@ void xio_free(xio_t *io) {
 #include "xunittest.h"
 
 int main(void) {
+  xio_t* io = xio_newfile("testdata/xio_test");
+  if (io == NULL) XTEST_EQ(0, 1);
   return 0;
 }
 
