@@ -1,13 +1,14 @@
 FLAGS=-g -std=gnu99
 
-XMALLOC=xmalloc.c xmalloc.h
-XSTRING=xstring.c xstring.h
+TEST_BIN=xstring xlist xtask xepoll xio
 
 .c.o:
 	gcc -DDEBUG -g -fPIC -std=gnu99 -I/usr/local/include -pthread -Wall -c $< -o $@
 
 all:$(OBJS) $(LUA_DIR)/src/liblua.a
 	gcc -g $(OBJS) $(LUA_DIR)/src/liblua.a -ldl -lm -lpthread -o spe
+
+test: $(TEST_BIN)
 
 xstring: xstring.c xmalloc.c xstring.h xmalloc.h
 	gcc $(FLAGS) -D__XSTRING_TEST xstring.c xmalloc.c -o xstring
@@ -21,8 +22,11 @@ xtask: xtask.c xtask.h rbtree.c rbtree.h
 xepoll: xepoll.c xepoll.h xlog.c xlog.h xtask.c xtask.h xmalloc.c xmalloc.h
 	gcc $(FLAGS) -D__XEPOLL_TEST xepoll.c xlog.c xtask.c -o xepoll
 
+xio: xio.c xio.h xmalloc.c xmalloc.h xstring.c xstring.h
+	gcc $(FLAGS) -D__XIO_TEST xio.c xmalloc.c xstring.c -o xio
+
 clean:
 	rm -rf *.o
-	rm -rf xstring xlist xtask
+	rm -rf $(TEST_BIN)
 
-.PHONY: all xstring xlist xtask clean
+.PHONY: all test $(TEST_BIN) clean

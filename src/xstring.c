@@ -4,13 +4,12 @@
 #include <stdlib.h>
 #include <string.h>
 
-xstring
-xstring_newlen(const void* init, size_t initlen) {
+xstring xstring_newlen(const void* init, size_t initlen) {
   xstring_hdr_t *sh;
   if (init) {
-    sh = xmalloc(sizeof(xstring_hdr_t) + initlen + 1);
+    sh = xmalloc(sizeof(xstring_hdr_t)+initlen+1);
   } else {
-    sh = xcalloc(sizeof(xstring_hdr_t) + initlen + 1);
+    sh = xcalloc(sizeof(xstring_hdr_t)+initlen+1);
   }
   if (sh == NULL) return NULL;
   sh->len = initlen;
@@ -22,35 +21,30 @@ xstring_newlen(const void* init, size_t initlen) {
   return (char*)sh->data;
 }
 
-xstring
-xstring_new(const char* init) {
+xstring xstring_new(const char* init) {
   size_t initlen = (init == NULL) ? 0 : strlen(init);
   return xstring_newlen(init, initlen);
 }
 
-xstring
-xstring_empty(void) {
+xstring xstring_empty(void) {
   return xstring_newlen("", 0);
 }
 
-xstring
-xstring_dup(xstring s) {
+xstring xstring_dup(xstring s) {
   return xstring_newlen(s, xstring_len(s));
 }
 
-void
-xstring_free(xstring s) {
+void xstring_free(xstring s) {
   if (s == NULL) return;
-  xfree(s - sizeof(xstring_hdr_t));
+  xfree(s-sizeof(xstring_hdr_t));
 }
 
 static inline size_t xstring_avail(xstring s) {
-  xstring_hdr_t* sh = (void*)(s - sizeof(xstring_hdr_t));
+  xstring_hdr_t* sh = (void*)(s-sizeof(xstring_hdr_t));
   return sh->size - sh->len;
 }
 
-static xstring
-grow(xstring s, size_t addlen) {
+xstring xstring_makeroom(xstring s, size_t addlen) {
   size_t free = xstring_avail(s);
   if (free >= addlen) return s;
 
@@ -63,10 +57,10 @@ grow(xstring s, size_t addlen) {
 }
 
 xstring xstring_catlen(xstring s, const void* t, size_t len) {
-  s = grow(s, len);
+  s = xstring_makeroom(s, len);
   if (s == NULL) return NULL;
 
-  xstring_hdr_t* sh = (void*)(s - sizeof(xstring_hdr_t));
+  xstring_hdr_t* sh = (void*)(s-sizeof(xstring_hdr_t));
   memcpy(s + sh->len, t, len); 
   sh->len += len;
   sh->data[sh->len] = '\0';
@@ -77,12 +71,16 @@ xstring xstring_cat(xstring s, const char* t) {
   return xstring_catlen(s, t, strlen(t));
 }
 
+xstring xstring_catxs(xstring s, xstring t) {
+  return xstring_catlen(s, t, xstring_len(t));
+}
+
 xstring xstring_cpylen(xstring s, const void* t, size_t len) {
-  xstring_hdr_t* sh = (void*)(s - sizeof(xstring_hdr_t));
+  xstring_hdr_t* sh = (void*)(s-sizeof(xstring_hdr_t));
   if (sh->size < len) {
-    s = grow(s, len - sh->len);
+    s = xstring_makeroom(s, len-sh->len);
     if (s == NULL) return NULL;
-    sh = (void*)(s - sizeof(xstring_hdr_t));
+    sh = (void*)(s-sizeof(xstring_hdr_t));
   }
   memcpy(s, t, len);
   sh->len = len;
@@ -92,6 +90,16 @@ xstring xstring_cpylen(xstring s, const void* t, size_t len) {
 
 xstring xstring_cpy(xstring s, const char* t) {
   return xstring_cpylen(s, t, strlen(t));
+}
+
+xstring xstring_cpyxs(xstring s, xstring t) {
+  return xstring_cpylen(s, t, xstring_len(t));
+}
+
+void xstring_clean(xstring s) {
+  xstring_hdr_t* sh = (void*)(s - sizeof(xstring_hdr_t));
+  sh->len = 0;
+  sh->data[sh->len] = '\0';
 }
 
 void xstring_range(xstring s, int start, int end) {
@@ -198,8 +206,14 @@ int main(void) {
   XTEST_EQ(xstring_len(s), 20);
   XTEST_STRING_EQ(s, "abcdefghijklmnopqrst");
 
-  xstring_range(s, 3, -2);
-  XTEST_STRING_EQ(s, "defghijklmnopqrs");
+  xstring_range(s, 3, 4);
+  XTEST_STRING_EQ(s, "de");
+
+  s = xstring_catxs(s, s);
+  XTEST_STRING_EQ(s, "dede");
+
+  xstring_clean(s);
+  XTEST_STRING_EQ(s, "");
 
   s = xstring_cpy(s, " this is    a test another   string");
 
