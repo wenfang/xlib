@@ -24,7 +24,7 @@ int xio_readuntil(xio_t *io, const char *delim, xstring* s);
 int xio_write(xio_t *io, xstring s);
 int xio_flush(xio_t *io);
 
-xio_t* xio_newfile(const char *fname);
+xio_t* xio_newfile(const char *fname, int create);
 xio_t* xio_newfd(int fd);
 void xio_free(xio_t *io);
 

@@ -33,6 +33,7 @@ xstring xstring_cpy(xstring s, const char* t);
 xstring xstring_cpyxs(xstring s, xstring t);
 
 void xstring_clean(xstring s);
+void xstring_strim(xstring s, const char* cset);
 void xstring_range(xstring s, int start, int end);
 
 xstring* xstring_split(xstring s, const char* sep, int* count);

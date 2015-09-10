@@ -97,8 +97,23 @@ xstring xstring_cpyxs(xstring s, xstring t) {
 }
 
 void xstring_clean(xstring s) {
-  xstring_hdr_t* sh = (void*)(s - sizeof(xstring_hdr_t));
+  xstring_hdr_t* sh = (void*)(s-sizeof(xstring_hdr_t));
   sh->len = 0;
+  sh->data[sh->len] = '\0';
+}
+
+void xstring_strim(xstring s, const char* cset) {
+  xstring_hdr_t* sh = (void*)(s-sizeof(xstring_hdr_t));
+  char *start, *end, *sp, *ep;
+  size_t len;
+
+  sp = start = s;
+  ep = end = s + xstring_len(s) - 1;
+  while (sp <= end && strchr(cset, *sp)) sp++;
+  while (ep > start && strchr(cset, *ep)) ep--;
+  len = (sp > ep) ? 0 : ((ep-sp)+1);
+  if (sh->data != sp) memmove(sh->data, sp, len);
+  sh->len = len;
   sh->data[sh->len] = '\0';
 }
 
@@ -201,6 +216,9 @@ int main(void) {
   s = xstring_cat(s, "abc");
   XTEST_EQ(xstring_len(s), 12);
   XTEST_STRING_EQ(s, "initotherabc");
+
+  xstring_strim(s, "inc ");
+  XTEST_STRING_EQ(s, "totherab");
 
   s = xstring_cpy(s, "abcdefghijklmnopqrst");
   XTEST_EQ(xstring_len(s), 20);

@@ -1,6 +1,7 @@
-#include "spe_io.h"
-#include "spe_opt.h"
-#include "spe_list.h"
+#include "xio.h"
+#include "xopt.h"
+#include "xmalloc.h"
+#include "list.h"
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
@@ -11,23 +12,17 @@
 #define KEY_MAXLEN  16
 #define VAL_MAXLEN  128
 
-typedef struct spe_opt_s {
+typedef struct xopt_s {
 	char sec[SEC_MAXLEN];
  	char key[KEY_MAXLEN];      // string key
 	char val[VAL_MAXLEN];      // string value
 	struct list_head  node;
-} spe_opt_t;
+} xopt_t;
 
 static LIST_HEAD(options);
 
-/*
-===================================================================================================
-spe_opt_set
-===================================================================================================
-*/
-static bool 
-spe_opt_set(char* sec, char* key, char* val) {
-  spe_opt_t* opt = calloc(1, sizeof(spe_opt_t));
+static bool xopt_set(const char* sec, const char* key, const char* val) {
+  xopt_t* opt = xcalloc(sizeof(xopt_t));
   if (opt == NULL) return false;
   // set section and key 
   strncpy(opt->sec, sec, SEC_MAXLEN);
@@ -39,113 +34,108 @@ spe_opt_set(char* sec, char* key, char* val) {
   return true;
 }
 
-/*
-===================================================================================================
-spe_opt_int
-===================================================================================================
-*/
-int
-spe_opt_int(char* section, char* key, int def) {
+int xopt_int(const char* sec, const char* key, int def) {
   if (key == NULL) return def;
-  if (section == NULL) section = "global";
-  spe_opt_t* entry = NULL;
+  if (sec == NULL) sec = "global";
+  xopt_t* entry = NULL;
   list_for_each_entry(entry, &options, node) {
-    if (!strcmp(section, entry->sec) && !strcmp(key, entry->key)) {
+    if (!strcmp(sec, entry->sec) && !strcmp(key, entry->key)) {
       return atoi(entry->val);
     }
   }
   return def;
 }
 
-/*
-===================================================================================================
-spe_opt_string
-===================================================================================================
-*/
-const char* 
-spe_opt_string(char* section, char* key, const char* def) {
+const char* xopt_string(const char* sec, const char* key, const char* def) {
   if (key == NULL) return def;
-  if (section == NULL) section = "global";
-  spe_opt_t* entry = NULL;
+  if (sec == NULL) sec = "global";
+  xopt_t* entry = NULL;
   list_for_each_entry(entry, &options, node) {
-    if (!strcmp(section, entry->sec) && !strcmp(key, entry->key)) {
+    if (!strcmp(sec, entry->sec) && !strcmp(key, entry->key)) {
       return entry->val;
     }
   }
   return def;
 }
 
-/*
-===================================================================================================
-spe_opt_create
-===================================================================================================
-*/
-bool 
-spe_opt_create(const char* config_file) {
+bool xopt_new(const char* config_file) {
   char sec[SEC_MAXLEN];
   char key[KEY_MAXLEN];
   char val[VAL_MAXLEN];
+  int res = 1;
 
-  spe_io_t* io = spe_io_create(config_file);
+  xio_t* io = xio_newfile(config_file);
   if (io == NULL) return false;
-  spe_buf_t* line = spe_buf_create();
+  
+  xstring line = xstring_empty();
   if (line == NULL) return false;
+
   // set default section
   strcpy(sec, "global");
-  int res = 1;
+ 
+  res = xio_readuntil(io, "\n", &line); 
   while (res > 0) {
     // get one line from file
-    spe_buf_clean(line);
-    res = spe_io_readuntil(io, "\n", line);
-    spe_buf_strim(line, " \r\t\n");
-    if (line->len == 0 || line->data[0] == '#') continue;
+    xstring_strim(line, " \r\t\n");
+    if (xstring_len(line) == 0 || *line == '#') continue;
     // section line, get section
-    if (line->data[0] == '[' && line->data[line->len-1] == ']') {
-      spe_buf_strim(line, " []\t");
+    if (*line == '[' && *(line+xstring_len(line)) == ']') {
+      xstring_strim(line, " []\t");
       // section can't be null
-      if (line->len == 0) {
-        spe_buf_destroy(line);
-        spe_io_destroy(io);
+      if (xstring_len(line) == 0) {
+        xstring_free(line);
+        xio_free(io);
         return false;
       }
-      strncpy(sec, line->data, SEC_MAXLEN);
+      strncpy(sec, line, SEC_MAXLEN);
       sec[SEC_MAXLEN-1] = 0;
-      continue;
+      goto next;
     }
     // split key and value
-    spe_bufs_t* bufs = spe_buf_split(line, "=");
-    if (bufs->len != 2) {
-      spe_bufs_destroy(bufs);
-      spe_buf_destroy(line);
-      spe_io_destroy(io);
+    int count;
+    xstring* tokens = xstring_split(line, "=", &count);
+    if (count != 2) {
+      xstrings_free(tokens, count);
+      xstring_free(line);
+      xio_free(io);
       return false;
     }
-    spe_buf_strim(bufs->data[0], " ");
-    strncpy(key, bufs->data[0]->data, KEY_MAXLEN);
+    xstring_strim(tokens[0], " ");
+    strncpy(key, tokens[0], KEY_MAXLEN);
     key[KEY_MAXLEN-1] = 0;
 
-    spe_buf_strim(bufs->data[1], " ");
-    strncpy(val, bufs->data[1]->data, VAL_MAXLEN);
+    xstring_strim(tokens[1], " ");
+    strncpy(val, tokens[1], VAL_MAXLEN);
     val[VAL_MAXLEN-1] = 0;
-    spe_bufs_destroy(bufs);
+    xstrings_free(tokens, count);
     // set option value
-    spe_opt_set(sec, key, val);
-  }
-  spe_buf_destroy(line);
-  spe_io_destroy(io);
+    xopt_set(sec, key, val);
+
+next:
+    xstring_clean(line);
+    res = xio_readuntil(io, "\n", &line); 
+  };
+  xstring_free(line);
+  xio_free(io);
   return true;
 }
 
-/*
-===================================================================================================
-spe_opt_destroy
-===================================================================================================
-*/
-void
-spe_opt_destroy() {
-  spe_opt_t *entry, *tmp;
+void xopt_free(void) {
+  xopt_t *entry, *tmp;
   list_for_each_entry_safe(entry, tmp, &options, node) {
     list_del_init(&entry->node);
-    free(entry);
+    xfree(entry);
   }
 }
+
+#ifdef __XOPT_TEST
+
+#include "xunittest.h"
+
+int main(void) {
+  bool res = xopt_new("testdata/test.conf");
+  XTEST_EQ(res, true);
+  xopt_free();
+}
+
+#endif

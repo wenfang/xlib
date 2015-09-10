@@ -44,7 +44,8 @@ static int readcommon(xio_t* io, xstring* s) {
         return len;
       }
     }
-    int res = read(io->_fd, buf, BUF_LEN);
+    
+    res = read(io->_fd, buf, BUF_LEN);
     if (res < 0) {
       if (errno == EINTR) continue;
       io->_error = 1;
@@ -124,9 +125,14 @@ int xio_flush(xio_t *io) {
   return total;
 }
 
-xio_t* xio_newfile(const char* fname) {
+xio_t* xio_newfile(const char* fname, int create) {
   ASSERT(fname);
-  int fd = open(fname, O_RDWR);
+  int fd;
+  if (create) {
+    fd = open(fname, O_RDWR | O_CREAT, 0666);
+  } else {
+    fd = open(fname, O_RDWR);
+  }
   if (fd < 0) return NULL;
 
   xio_t *io = xio_newfd(fd);
@@ -165,14 +171,14 @@ void xio_free(xio_t *io) {
 #include "xunittest.h"
 
 int main(void) {
-  xio_t* io = xio_newfile("testdata/xio_test");
+  xio_t* io = xio_newfile("testdata/xio_test", 1);
   if (io == NULL) XTEST_EQ(0, 1);
   xstring s = xstring_new("this is  a test");
   xio_write(io, s);
   xio_flush(io);
   xio_free(io);
 
-  io = xio_newfile("testdata/xio_test");
+  io = xio_newfile("testdata/xio_test", 0);
   if (io == NULL) XTEST_EQ(0, 1);
 
   xstring_clean(s);
