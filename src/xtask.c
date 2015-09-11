@@ -11,8 +11,7 @@
 static LIST_HEAD(task_head);
 static struct rb_root timer_head;
 
-void
-xtask_init(xtask *task) {
+void xtask_init(xtask *task) {
   ASSERT(task);
   task->handler   = XHANDLER_EMPTY;
   task->flags     = 0;
@@ -22,13 +21,11 @@ xtask_init(xtask *task) {
   INIT_LIST_HEAD(&task->_task_node);
 }
 
-bool
-xtask_empty(void) {
+bool xtask_empty(void) {
   return list_empty(&task_head) ? true : false;
 }
 
-void
-xtask_enqueue(xtask *task) {
+void xtask_enqueue(xtask *task) {
   ASSERT(task);
   if (task->_status == XTASK_QUEUE) return;
   if (task->_status == XTASK_TIMER) {
@@ -44,8 +41,7 @@ xtask_enqueue(xtask *task) {
   task->_status = XTASK_QUEUE;
 }
 
-void
-xtask_enqueue_timeout(xtask *task, unsigned long ms) {
+void xtask_enqueue_timeout(xtask *task, unsigned long ms) {
   ASSERT(task);
   if (task->_status == XTASK_QUEUE) return;
   if (task->_status == XTASK_TIMER) {
@@ -69,8 +65,7 @@ xtask_enqueue_timeout(xtask *task, unsigned long ms) {
   task->_status = XTASK_TIMER;
 }
 
-void
-xtask_dequeue(xtask* task) {
+void xtask_dequeue(xtask* task) {
   ASSERT(task);
   if (task->_status == XTASK_FREE) return;
   if (task->_status == XTASK_QUEUE) {
@@ -82,8 +77,7 @@ xtask_dequeue(xtask* task) {
   task->_status = XTASK_FREE;
 }
 
-void
-xtask_process(void) {
+void xtask_process(void) {
   // check timer queue
   if (!RB_EMPTY_ROOT(&timer_head)) {
     unsigned long curr_time = xcurrent_time();

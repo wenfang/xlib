@@ -10,7 +10,7 @@
 #define XTASK_TIMEOUT 2
 
 typedef struct xtask_s {
-  xhandler          handler;
+  xhandler_t        handler;
   unsigned          flags;
   struct rb_node    _timer_node;
   struct list_head  _task_node;
@@ -18,22 +18,13 @@ typedef struct xtask_s {
   unsigned          _status;
 } xtask __attribute__((aligned(sizeof(long))));
 
-extern void
-xtask_init(xtask *task);
+void xtask_init(xtask *task);
+bool xtask_empty(void);
 
-extern bool
-xtask_empty(void);
+void xtask_enqueue(xtask *task);
+void xtask_enqueue_timeout(xtask *task, unsigned long ms);
+void xtask_dequeue(xtask *task);
 
-extern void
-xtask_enqueue(xtask *task);
-
-extern void
-xtask_enqueue_timeout(xtask *task, unsigned long ms);
-
-extern void
-xtask_dequeue(xtask *task);
-
-extern void
-xtask_process(void);
+void xtask_process(void);
 
 #endif

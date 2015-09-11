@@ -7,11 +7,11 @@ typedef struct xhandler_s {
   xHandler  handler;
   void      *arg1;
   void      *arg2;
-} __attribute__((aligned(sizeof(long)))) xhandler;
+} __attribute__((aligned(sizeof(long)))) xhandler_t;
 
 
-#define XHANDLER_EMPTY                (xhandler){NULL, NULL, NULL}
-#define XHANDLER(handler, arg1, arg2) (xhandler){handler, arg1, arg2}
+#define XHANDLER_EMPTY                (xhandler_t){NULL, NULL, NULL}
+#define XHANDLER(handler, arg1, arg2) (xhandler_t){handler, arg1, arg2}
 
 #define XHANDLER_CALL(h)                \
   do {                                  \

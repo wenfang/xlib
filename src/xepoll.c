@@ -22,13 +22,7 @@ static int        				epoll_maxfd;
 static xepoll 				    *epolls;
 static struct epoll_event *epoll_events;
 
-/*
-===================================================================================================
-change_epoll
-===================================================================================================
-*/
-static bool
-change_epoll(unsigned fd, xepoll *epoll_t, unsigned newmask) {
+static bool change_epoll(unsigned fd, xepoll *epoll_t, unsigned newmask) {
   if (epoll_t->mask == newmask) return true;
   // set epoll_event 
   struct epoll_event ee;
@@ -52,8 +46,7 @@ change_epoll(unsigned fd, xepoll *epoll_t, unsigned newmask) {
   return true;
 }
 
-bool
-xepoll_enable(unsigned fd, unsigned mask, xtask *task) {
+bool xepoll_enable(unsigned fd, unsigned mask, xtask *task) {
   ASSERT(task);
   if (fd >= epoll_maxfd) return false;
   xepoll *epoll_t = &epolls[fd];
@@ -62,8 +55,7 @@ xepoll_enable(unsigned fd, unsigned mask, xtask *task) {
   return change_epoll(fd, epoll_t, epoll_t->mask | mask);
 }
 
-bool
-xepoll_disable(unsigned fd, unsigned mask) {
+bool xepoll_disable(unsigned fd, unsigned mask) {
   if (fd >= epoll_maxfd) return false;
   xepoll *epoll_t = &epolls[fd];
   if (mask & XEPOLL_READ) epoll_t->read_task = NULL;
@@ -71,8 +63,7 @@ xepoll_disable(unsigned fd, unsigned mask) {
   return change_epoll(fd, epoll_t, epoll_t->mask & (~mask));
 }
 
-void
-xepoll_process(int timeout) {
+void xepoll_process(int timeout) {
   struct epoll_event* e;
   xepoll *epoll_t;
   int i, events_n;
@@ -97,8 +88,7 @@ xepoll_process(int timeout) {
   }
 }
 
-bool
-xepoll_init(void) {
+bool xepoll_init(void) {
   epfd = epoll_create(10240);
   if (epfd < 0) {
     XLOG_ERR("epoll_create: %s", strerror(errno));
@@ -134,6 +124,9 @@ xepoll_deinit(void) {
 #include "xunittest.h"
 
 int main(void) {
+  xconf_load();
+  xepoll_init();
+  xepoll_deinit();
   return 0;
 }
 
