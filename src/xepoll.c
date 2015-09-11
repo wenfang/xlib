@@ -73,7 +73,11 @@ xepoll_disable(unsigned fd, unsigned mask) {
 
 void
 xepoll_process(int timeout) {
-  int events_n = epoll_wait(epfd, epoll_events, epoll_maxfd, timeout);
+  struct epoll_event* e;
+  xepoll *epoll_t;
+  int i, events_n;
+  
+  events_n = epoll_wait(epfd, epoll_events, epoll_maxfd, timeout);
   if (unlikely(events_n < 0)) {
     if (errno == EINTR) return;
     XLOG_ERR("epoll_wait error: %s", strerror(errno));
@@ -81,9 +85,7 @@ xepoll_process(int timeout) {
   }
   if (events_n == 0) return;
   // check events
-  struct epoll_event* e;
-  xepoll *epoll_t;
-  for (int i=0; i<events_n; i++) {
+  for (i=0; i<events_n; i++) {
     e = &epoll_events[i];
     epoll_t = &epolls[e->data.fd];
     if ((e->events & EPOLLIN) && (epoll_t->mask & XEPOLL_READ)) {
@@ -126,3 +128,13 @@ xepoll_deinit(void) {
 	free(epoll_events);
   return true;
 }
+
+#ifdef __XEPOLL_TEST
+
+#include "xunittest.h"
+
+int main(void) {
+  return 0;
+}
+
+#endif

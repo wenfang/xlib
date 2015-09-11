@@ -62,9 +62,9 @@ bool xopt_new(const char* config_file) {
   char sec[SEC_MAXLEN];
   char key[KEY_MAXLEN];
   char val[VAL_MAXLEN];
-  int res = 1;
+  int res;
 
-  xio_t* io = xio_newfile(config_file);
+  xio_t* io = xio_newfile(config_file, 0);
   if (io == NULL) return false;
   
   xstring line = xstring_empty();
@@ -74,10 +74,10 @@ bool xopt_new(const char* config_file) {
   strcpy(sec, "global");
  
   res = xio_readuntil(io, "\n", &line); 
-  while (res > 0) {
+  while ((res > 0) || (res <=0 && xstring_len(line) > 0)) {
     // get one line from file
     xstring_strim(line, " \r\t\n");
-    if (xstring_len(line) == 0 || *line == '#') continue;
+    if (xstring_len(line) == 0 || *line == '#') goto next;
     // section line, get section
     if (*line == '[' && *(line+xstring_len(line)) == ']') {
       xstring_strim(line, " []\t");
@@ -112,6 +112,7 @@ bool xopt_new(const char* config_file) {
     xopt_set(sec, key, val);
 
 next:
+    if (res <= 0) break;
     xstring_clean(line);
     res = xio_readuntil(io, "\n", &line); 
   };
@@ -133,8 +134,21 @@ void xopt_free(void) {
 #include "xunittest.h"
 
 int main(void) {
+  xio_t *io = xio_newfile("testdata/test.conf", 1);
+  XTEST_NOT_EQ(io, NULL);
+
+  xstring s = xstring_new("name= wenfang\n# test\n age = 12 \nlocation=beijing");
+  xio_write(io, s);
+  xio_flush(io);
+
+  xstring_free(s);
+  xio_free(io);
+  
   bool res = xopt_new("testdata/test.conf");
   XTEST_EQ(res, true);
+  XTEST_STRING_EQ(xopt_string(NULL, "name", NULL), "wenfang");
+  XTEST_EQ(xopt_int(NULL, "age", 0), 12);
+  XTEST_STRING_EQ(xopt_string(NULL, "location", NULL), "beijing");
   xopt_free();
 }
 

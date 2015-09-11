@@ -13,8 +13,7 @@ typedef struct xconf_s {
   void        *ctx[XMODULE_MAX];
 } xconf;
 
-extern bool 
-xconf_load();
+bool xconf_load(void);
 
 extern xconf global_conf;
 
