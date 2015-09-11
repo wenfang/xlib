@@ -1,6 +1,6 @@
 AUTOMAKE_OPTIONS=foreign
 
-bin_PROGRAMS=xstring xio xopt xtask xepoll xlist
+bin_PROGRAMS=xstring xio xopt xtask xepoll xlist xtpool
 
 xstring_SOURCES = xstring.c xmalloc.c xstring.h xmalloc.h
 xstring_CPPFLAGS = -D__XSTRING_TEST
@@ -19,3 +19,7 @@ xepoll_CPPFLAGS = -D__XEPOLL_TEST
 
 xlist_SOURCES = xlist.c xmalloc.c xlist.h xmalloc.h
 xlist_CPPFLAGS = -D__XLIST_TEST
+
+xtpool_SOURCES = xtpool.c xmalloc.c xtpool.h xmalloc.h
+xtpool_CPPFLAGS = -D__XTPOOL_TEST
+xtpool_LDFLAGS = -lpthread

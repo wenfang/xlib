@@ -6,7 +6,7 @@
 
 bool xtpool_do(xhandler_t handler);
 
-bool xtpool_init();
-void xtpool_deinit();
+bool xtpool_init(unsigned size);
+void xtpool_deinit(void);
 
 #endif
