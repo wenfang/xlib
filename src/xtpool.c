@@ -113,9 +113,7 @@ bool xtpool_init(unsigned size) {
 
   pool = xcalloc(sizeof(xtpool_t) + size*sizeof(xthread_t));
   if (!pool) return false;
-
-  pool->size = xcpu_count() * 2;
-  if (pool->size > MAX_THREAD) pool->size = MAX_THREAD;
+  pool->size = size;
   INIT_LIST_HEAD(&pool->free);
   pthread_mutex_init(&pool->freeLock, NULL);
   // enable thread
@@ -158,8 +156,18 @@ void xtpool_deinit(void) {
 
 #include "xunittest.h"
 
+void foo(void *arg1, void *arg2) {
+  printf("foo called\n");
+}
+
 int main(void) {
-  xtpool_init();
+  xtpool_init(8);
+  xhandler_t handler = XHANDLER(foo, NULL, NULL);
+  xtpool_do(handler);
+  xtpool_do(handler);
+  xtpool_do(handler);
+  xtpool_do(handler);
+  sleep(1);
   xtpool_deinit();
   return 0;
 }
