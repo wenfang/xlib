@@ -18,56 +18,57 @@ typedef struct xdictType {
 
 typedef struct xdict {
   xdictEntry **table;
+  xdictType *type;
   unsigned long size;
   unsigned long sizemask;
   unsigned long used; 
   void *privdate;
 } xdict;
 
-typedef struct dictIterator {
+typedef struct xdictIterator {
   xdict *ht;
   int index;
-  dictEntry *entry, *nextEntry;
-} dictIterator;
+  xdictEntry *entry, *nextEntry;
+} xdictIterator;
 
 #define XDICT_INITIAL_SIZE 4
 
-#define dictFreeEntryVal(ht, entry) \
+#define xdictFreeEntryVal(ht, entry) \
     if ((ht)->type->valDestructor) \
         (ht)->type->valDestructor((ht)->privdata, (entry)->val)
 
-#define dictSetHashVal(ht, entry, _val_) do { \
+#define xdictSetHashVal(ht, entry, _val_) do { \
     if ((ht)->type->valDup) \
         entry->val = (ht)->type->valDup((ht)->privdata, _val_); \
     else \
         entry->val = (_val_); \
 } while(0)
 
-#define dictFreeEntryKey(ht, entry) \
+#define xdictFreeEntryKey(ht, entry) \
     if ((ht)->type->keyDestructor) \
         (ht)->type->keyDestructor((ht)->privdata, (entry)->key)
 
-#define dictSetHashKey(ht, entry, _key_) do { \
+#define xdictSetHashKey(ht, entry, _key_) do { \
     if ((ht)->type->keyDup) \
         entry->key = (ht)->type->keyDup((ht)->privdata, _key_); \
     else \
         entry->key = (_key_); \
 } while(0)
 
-#define dictCompareHashKeys(ht, key1, key2) \
+#define xdictCompareHashKeys(ht, key1, key2) \
     (((ht)->type->keyCompare) ? \
         (ht)->type->keyCompare((ht)->privdata, key1, key2) : \
         (key1) == (key2))
 
-#define dictHashKey(ht, key) (ht)->type->hashFunction(key)
+#define xdictHashKey(ht, key) (ht)->type->hashFunction(key)
 
-#define dictGetEntryKey(he) ((he)->key)
-#define dictGetEntryVal(he) ((he)->val)
-#define dictSlots(ht) ((ht)->size)
-#define dictSize(ht) ((ht)->used)
+#define xdictGetEntryKey(he) ((he)->key)
+#define xdictGetEntryVal(he) ((he)->val)
+#define xdictSlots(ht) ((ht)->size)
+#define xdictSize(ht) ((ht)->used)
 
 
-xdict* xdict_new(void);
+xdict* xdict_new(xdictType *type, void *privDataPtr);
 void xdict_free(xdict* dict);
 
 int xdict_add(xdict* d, void* key, void* value);

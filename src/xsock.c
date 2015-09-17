@@ -13,8 +13,7 @@
 
 #define DEFAULT_BACKLOG	10240
 
-static bool 
-sock_addr_valid(const char* addr) {
+static bool sock_addr_valid(const char* addr) {
   if (!addr) return false;
   int dot_cnt = 0;
   int addrLen = strlen(addr);
@@ -30,8 +29,7 @@ sock_addr_valid(const char* addr) {
   return true;
 }
 
-int 
-xsock_tcp_server(const char* addr, int port) {
+int xsock_tcp_server(const char* addr, int port) {
   int sfd;
   if ((sfd = socket(AF_INET, SOCK_STREAM, 0)) == -1) return -1;
   //set socket option
@@ -63,8 +61,7 @@ error_out:
   return -1;
 }
 
-int 
-xsock_udp_server(const char* addr, int port) {
+int xsock_udp_server(const char* addr, int port) {
   int sfd;
   if ((sfd = socket(AF_INET, SOCK_DGRAM, 0)) == -1) return -1;
 
@@ -86,16 +83,14 @@ error_out:
   return -1;
 }
 
-int 
-xsock_accept(int sfd) {
+int xsock_accept(int sfd) {
   struct sockaddr_in caddr;
   socklen_t caddr_len = 0;
   bzero(&caddr, sizeof(caddr));
   return accept(sfd, (struct sockaddr*)&caddr, &caddr_len);
 }
 
-int 
-xsock_accept_timeout(int sfd, int timeout) {
+int xsock_accept_timeout(int sfd, int timeout) {
   struct sockaddr_in caddr;
   socklen_t caddr_len = 0;
   bzero(&caddr, sizeof(caddr));
@@ -104,7 +99,7 @@ xsock_accept_timeout(int sfd, int timeout) {
   for (;;) {
     pfd.fd = sfd;
     pfd.events = POLLIN;
-    int res= poll(&pfd, 1, timeout);
+    int resv= poll(&pfd, 1, timeout);
     // poll error or timeout
     if (res < 0) {
       if (errno == EINTR) continue;
@@ -121,8 +116,7 @@ xsock_accept_timeout(int sfd, int timeout) {
   }
 }
 
-bool 
-xsock_set_block(int fd, int block) {
+bool xsock_set_block(int fd, int block) {
   int flags;
   if ((flags = fcntl(fd, F_GETFL, 0)) < 0) return false;
   // set new flags;

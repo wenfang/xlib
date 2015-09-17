@@ -6,33 +6,23 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 
-extern int  
-xsock_accept(int fd);
+int xsock_accept(int fd);
+int xsock_accept_timeout(int fd, int timeout);
 
-extern int  
-xsock_accept_timeout(int fd, int timeout);
+bool xsock_set_block(int fd, int block);
 
-extern bool 
-xsock_set_block(int fd, int block);
+int xsock_tcp_server(const char* addr, int port);
+int xsock_udp_server(const char* addr, int port);
 
-extern int  
-xsock_tcp_server(const char* addr, int port);
-
-extern int
-xsock_udp_server(const char* addr, int port);
-
-static inline int 
-xsock_tcp_socket(void) {
+static inline int xsock_tcp_socket(void) {
   return socket(AF_INET, SOCK_STREAM, 0);
 }
 
-static inline int 
-xsock_udp_socket(void) {
+static inline int xsock_udp_socket(void) {
   return socket(AF_INET, SOCK_DGRAM, 0);
 }
 
-static inline int 
-xsock_close(int fd) {
+static inline int xsock_close(int fd) {
   return close(fd);
 }
 
