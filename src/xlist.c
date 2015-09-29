@@ -107,6 +107,31 @@ void xlist_DelNode(xlist *list, xlistNode *node) {
 }
 
 xlistIter* xlist_newIterator(xlist *list, int direction) {
+  xlistIter *iter = xmalloc(sizeof(xlistIter));
+  if (iter == NULL) return NULL;
+  if (direction == XLIST_START_HEAD) {
+    iter->next = list->head;
+  } else {
+    iter->next = list->tail;
+  }
+  iter->direction = direction;
+  return iter;
+}
+
+xlistNode* xlist_Next(xlistIter *iter) {
+  xlistNode *current = iter->next;
+  if (current != NULL) {
+    if (iter->direction == XLIST_START_HEAD) {
+      iter->next = current->next;
+    } else {
+      iter->next = current->prev;
+    }
+  }
+  return current;
+}
+
+void xlist_freeIterator(xlistIter *iter) {
+  xfree(iter);
 }
 
 #ifdef __XLIST_TEST

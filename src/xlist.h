@@ -32,7 +32,6 @@ void xlist_free(xlist *list);
 xlist* xlist_AddNodeHead(xlist *list, void *value);
 xlist* xlist_AddNodeTail(xlist *list, void *value);
 xlist* xlist_InsertNode(xlist *list, xlistNode *old_node, void *value, int after);
-
 void xlist_DelNode(xlist *list, xlistNode *node);
 
 xlistIter* xlist_newIterator(xlist *list, int direction);
@@ -40,5 +39,8 @@ xlistNode* xlist_Next(xlistIter *iter);
 void xlist_freeIterator(xlistIter *iter);
 void xlist_Rewind(xlist *list, xlistIter *li);
 void xlist_RewindTail(xlist *list, xlistIter *li);
+
+#define XLIST_START_HEAD  0
+#define XLIST_START_TAIL  1
 
 #endif

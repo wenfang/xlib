@@ -150,6 +150,7 @@ int main(void) {
   XTEST_EQ(xopt_int(NULL, "age", 0), 12);
   XTEST_STRING_EQ(xopt_string(NULL, "location", NULL), "beijing");
   xopt_free();
+  return 0;
 }
 
 #endif

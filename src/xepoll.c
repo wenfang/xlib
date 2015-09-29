@@ -120,7 +120,6 @@ void xepoll_deinit(void) {
   close(epfd);
   xfree(epolls);
 	xfree(epoll_events);
-  return true;
 }
 
 #ifdef __XEPOLL_TEST
