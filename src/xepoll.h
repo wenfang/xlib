@@ -10,7 +10,7 @@
 #define XEPOLL_WRITE  2
 
 bool xepoll_init(void);
-bool xepoll_deinit(void);
+void xepoll_deinit(void);
 
 bool xepoll_enable(unsigned fd, unsigned mask, xtask *task);
 bool xepoll_disable(unsigned fd, unsigned mask);

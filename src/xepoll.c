@@ -18,7 +18,7 @@ typedef struct xepoll_s {
 } xepoll __attribute__((aligned(sizeof(long))));
 
 static int        				epfd;
-static int        				epoll_maxfd;
+static int        				maxfd;
 static xepoll 				    *epolls;
 static struct epoll_event *epoll_events;
 
@@ -48,7 +48,7 @@ static bool change_epoll(unsigned fd, xepoll *epoll_t, unsigned newmask) {
 
 bool xepoll_enable(unsigned fd, unsigned mask, xtask *task) {
   ASSERT(task);
-  if (fd >= epoll_maxfd) return false;
+  if (fd >= maxfd) return false;
   xepoll *epoll_t = &epolls[fd];
   if (mask & XEPOLL_READ) epoll_t->read_task = task;
   if (mask & XEPOLL_WRITE) epoll_t->write_task = task;
@@ -56,7 +56,7 @@ bool xepoll_enable(unsigned fd, unsigned mask, xtask *task) {
 }
 
 bool xepoll_disable(unsigned fd, unsigned mask) {
-  if (fd >= epoll_maxfd) return false;
+  if (fd >= maxfd) return false;
   xepoll *epoll_t = &epolls[fd];
   if (mask & XEPOLL_READ) epoll_t->read_task = NULL;
   if (mask & XEPOLL_WRITE) epoll_t->write_task = NULL;
@@ -68,7 +68,7 @@ void xepoll_process(int timeout) {
   xepoll *epoll_t;
   int i, events_n;
   
-  events_n = epoll_wait(epfd, epoll_events, epoll_maxfd, timeout);
+  events_n = epoll_wait(epfd, epoll_events, maxfd, timeout);
   if (unlikely(events_n < 0)) {
     if (errno == EINTR) return;
     XLOG_ERR("epoll_wait error: %s", strerror(errno));
@@ -95,27 +95,31 @@ bool xepoll_init(void) {
     return false;
   }
 
-  epoll_maxfd = global_conf.maxfd;
-  epolls = xcalloc(sizeof(xepoll)*epoll_maxfd);
+  maxfd = global_conf.maxfd;
+  epolls = xcalloc(sizeof(xepoll)*maxfd);
   if (!epolls) {
-    close(epfd);
-    return false;
+    XLOG_ERR("xcalloc error");
+    goto err_out1;
   }
 
-	epoll_events = xcalloc(sizeof(struct epoll_event)*epoll_maxfd);
+	epoll_events = xcalloc(sizeof(struct epoll_event)*maxfd);
 	if (!epoll_events) {
-		free(epolls);
-		close(epfd);
-		return false;
+    XLOG_ERR("xcalloc error");
+    goto err_out2;
 	}
   return true;
+
+err_out2:
+  xfree(epolls);
+err_out1:
+  close(epfd);
+  return false;
 }
 
-bool
-xepoll_deinit(void) {
+void xepoll_deinit(void) {
   close(epfd);
-  free(epolls);
-	free(epoll_events);
+  xfree(epolls);
+	xfree(epoll_events);
   return true;
 }
 

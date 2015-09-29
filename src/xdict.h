@@ -1,6 +1,9 @@
 #ifndef __XDICT_H
 #define __XDICT_H
 
+#define XDICT_OK  0
+#define XDICT_ERR 1
+
 typedef struct xdictEntry {
   void *key;
   void *val;
@@ -22,7 +25,7 @@ typedef struct xdict {
   unsigned long size;
   unsigned long sizemask;
   unsigned long used; 
-  void *privdate;
+  void *privdata;
 } xdict;
 
 typedef struct xdictIterator {
@@ -69,8 +72,9 @@ typedef struct xdictIterator {
 
 
 xdict* xdict_new(xdictType *type, void *privDataPtr);
-void xdict_free(xdict* dict);
+void xdict_free(xdict *dict);
 
-int xdict_add(xdict* d, void* key, void* value);
+int xdict_add(xdict *d, void *key, void *value);
+int xdict_del(xdict *d, void *key);
 
 #endif
