@@ -134,6 +134,16 @@ void xlist_freeIterator(xlistIter *iter) {
   xfree(iter);
 }
 
+void xlist_Rewind(xlist *list, xlistIter *li) {
+  li->next = list->head;
+  li->direction = XLIST_START_HEAD;
+}
+
+void xlist_RewindTail(xlist *list, xlistIter *li) {
+  li->next = list->tail;
+  li->direction = XLIST_START_TAIL;
+}
+
 #ifdef __XLIST_TEST
 
 #include "xunittest.h"
