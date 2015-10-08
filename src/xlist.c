@@ -24,7 +24,7 @@ void xlist_free(xlist *list) {
   xfree(list);
 }
 
-xlist* xlist_AddNodeHead(xlist *list, void *value) {
+xlist* xlist_addNodeHead(xlist *list, void *value) {
   xlistNode *node;
   node = xmalloc(sizeof(xlistNode));
   if (node == NULL) return NULL; 
@@ -43,7 +43,7 @@ xlist* xlist_AddNodeHead(xlist *list, void *value) {
   return list;
 }
 
-xlist* xlist_AddNodeTail(xlist *list, void *value) {
+xlist* xlist_addNodeTail(xlist *list, void *value) {
   xlistNode *node;
   node = xmalloc(sizeof(xlistNode));
   if (node == NULL) return NULL; 
@@ -62,7 +62,7 @@ xlist* xlist_AddNodeTail(xlist *list, void *value) {
   return list;
 }
 
-xlist* xlist_InsertNode(xlist *list, xlistNode *old_node, void *value, int after) {
+xlist* xlist_insertNode(xlist *list, xlistNode *old_node, void *value, int after) {
   xlistNode *node;
   node = xmalloc(sizeof(xlistNode));
   if (node == NULL) return NULL;
@@ -92,7 +92,7 @@ xlist* xlist_InsertNode(xlist *list, xlistNode *old_node, void *value, int after
   return list;
 }
 
-void xlist_DelNode(xlist *list, xlistNode *node) {
+void xlist_delNode(xlist *list, xlistNode *node) {
   if (node->prev) {
     node->prev->next = node->next;
   } else {
@@ -118,7 +118,7 @@ xlistIter* xlist_newIterator(xlist *list, int direction) {
   return iter;
 }
 
-xlistNode* xlist_Next(xlistIter *iter) {
+xlistNode* xlist_next(xlistIter *iter) {
   xlistNode *current = iter->next;
   if (current != NULL) {
     if (iter->direction == XLIST_START_HEAD) {
@@ -134,12 +134,12 @@ void xlist_freeIterator(xlistIter *iter) {
   xfree(iter);
 }
 
-void xlist_Rewind(xlist *list, xlistIter *li) {
+void xlist_rewind(xlist *list, xlistIter *li) {
   li->next = list->head;
   li->direction = XLIST_START_HEAD;
 }
 
-void xlist_RewindTail(xlist *list, xlistIter *li) {
+void xlist_rewindTail(xlist *list, xlistIter *li) {
   li->next = list->tail;
   li->direction = XLIST_START_TAIL;
 }
@@ -150,8 +150,8 @@ void xlist_RewindTail(xlist *list, xlistIter *li) {
 
 int main(void) {
   xlist *list = xlist_new();
-  list = xlist_AddNodeHead(list, NULL);
-  list = xlist_InsertNode(list, xlistFirst(list), NULL, 1);
+  list = xlist_addNodeHead(list, NULL);
+  list = xlist_insertNode(list, xlistFirst(list), NULL, 1);
   xlist_free(list);
   return 0;
 }

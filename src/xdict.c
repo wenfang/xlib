@@ -45,6 +45,10 @@ static void xdict_keyIndex(xdict *d, const void *key) {
 }
 
 int xdict_add(xdict *d, void *key, void *value) {
+  int index;
+  xdictEntry *entry;
+
+  return XDICT_OK; 
 }
 
 

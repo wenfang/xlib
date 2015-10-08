@@ -54,6 +54,8 @@ void xshm_mutex_free(pthread_mutex_t* shmux) {
 #ifdef __XSHM_TEST
 
 int main(void) {
+  xshm_t* shm = xshm_new(10240);
+  xshm_free(shm);
   return 0;
 }
 
