@@ -1,5 +1,6 @@
 #include "xstring.h"
 #include "xmalloc.h"
+#include "xutil.h"
 
 #include <stdlib.h>
 #include <string.h>
@@ -11,7 +12,6 @@ xstring xstring_newlen(const void* init, size_t initlen) {
   } else {
     sh = xcalloc(sizeof(xstring_hdr_t)+initlen+1);
   }
-  if (sh == NULL) return NULL;
   sh->len = initlen;
   sh->size = initlen;
   if (init && initlen) {
@@ -39,27 +39,19 @@ void xstring_free(xstring s) {
   xfree(s-sizeof(xstring_hdr_t));
 }
 
-static inline size_t xstring_avail(xstring s) {
-  xstring_hdr_t* sh = (void*)(s-sizeof(xstring_hdr_t));
-  return sh->size - sh->len;
-}
-
 xstring xstring_makeroom(xstring s, size_t addlen) {
-  size_t free = xstring_avail(s);
+  xstring_hdr_t* sh = (void*)(s-sizeof(xstring_hdr_t));
+  size_t free = sh->size - sh->len;
   if (free >= addlen) return s;
 
-  xstring_hdr_t* sh = (void*)(s - sizeof(xstring_hdr_t));
   size_t newsize = 25 * (xstring_len(s) + addlen) / 16;
   xstring_hdr_t* newsh = xrealloc(sh, sizeof(xstring_hdr_t) + newsize + 1);
-  if (newsh == NULL) return NULL;
   newsh->size = newsize;
   return (char*)newsh->data;
 }
 
 xstring xstring_catlen(xstring s, const void* t, size_t len) {
   s = xstring_makeroom(s, len);
-  if (s == NULL) return NULL;
-
   xstring_hdr_t* sh = (void*)(s-sizeof(xstring_hdr_t));
   memcpy(s + sh->len, t, len); 
   sh->len += len;
@@ -75,11 +67,23 @@ xstring xstring_catxs(xstring s, xstring t) {
   return xstring_catlen(s, t, xstring_len(t));
 }
 
+xstring xstring_catfd(xstring s, int fd, unsigned len, int *res) {
+  s = xstring_makeroom(s, len);
+  xstring_hdr_t* sh = (void*)(s-sizeof(xstring_hdr_t));
+  *res = read(fd, s + sh->len, len);
+  if (*res <= 0) {
+    sh->data[sh->len] = '\0';
+    return s;
+  }
+  sh->len += *res;
+  sh->data[sh->len] = '\0';
+  return s;
+}
+
 xstring xstring_cpylen(xstring s, const void* t, size_t len) {
   xstring_hdr_t* sh = (void*)(s-sizeof(xstring_hdr_t));
   if (sh->size < len) {
     s = xstring_makeroom(s, len-sh->len);
-    if (s == NULL) return NULL;
     sh = (void*)(s-sizeof(xstring_hdr_t));
   }
   memcpy(s, t, len);
@@ -94,6 +98,22 @@ xstring xstring_cpy(xstring s, const char* t) {
 
 xstring xstring_cpyxs(xstring s, xstring t) {
   return xstring_cpylen(s, t, xstring_len(t));
+}
+
+xstring xstring_cpyfd(xstring s, int fd, unsigned len, int *res) {
+  xstring_hdr_t* sh = (void*)(s-sizeof(xstring_hdr_t));
+  if (sh->size < len) {
+    s = xstring_makeroom(s, len-sh->len);
+    sh = (void*)(s-sizeof(xstring_hdr_t));
+  }
+  *res = read(fd, s, len);
+  if (*res <= 0) {
+    xstring_clean(s);
+    return s;
+  }
+  sh->len = *res;
+  sh->data[sh->len] = '\0';
+  return s;
 }
 
 void xstring_clean(xstring s) {
@@ -136,7 +156,7 @@ void xstring_range(xstring s, int start, int end) {
       newlen = 0;
     } else if (end >= (signed)len) {
       end = len-1;
-      newlen = (start > end)?0:(end-start)+1;
+      newlen = (start > end) ? 0 : (end-start)+1;
     }
   } else {
     start = 0;
@@ -146,14 +166,18 @@ void xstring_range(xstring s, int start, int end) {
   sh->len = newlen;
 }
 
-xstring* xstring_split(xstring s, const char* sep, int* count) {
-  int slots = 5;
-  xstring* token = xmalloc(sizeof(xstring)*slots);
-  if (token == NULL) return token;
+int xstring_search(xstring s, const char *key) {
+  ASSERT(key);
+  if (!xstring_len(s)) return -1;
+  char *point = strstr(s, key);
+  if (!point) return -1;
+  return point - s;
+}
 
-  xstring* newtoken;
-  int i, start = 0;
+xstring* xstring_split(xstring s, const char* sep, int* count) {
+  int start = 0, slots = 5;
   size_t total = xstring_len(s);
+  xstring* token = xmalloc(sizeof(xstring)*slots);
 
   *count = 0;
   while (start < total) {
@@ -164,9 +188,7 @@ xstring* xstring_split(xstring s, const char* sep, int* count) {
       (*count)++;
       if (*count >= slots) {
         slots = slots * 3 / 2;
-        newtoken = xrealloc(token, sizeof(xstring)*slots);
-        if (newtoken == NULL) goto err_out;
-        token = newtoken;
+        token = xrealloc(token, sizeof(xstring)*slots);
       }
     }
     start = point - s + strlen(sep);
@@ -177,20 +199,10 @@ xstring* xstring_split(xstring s, const char* sep, int* count) {
     (*count)++;
     if (*count >= slots) {
         slots = slots * 3 / 2;
-        newtoken = xrealloc(token, sizeof(xstring)*slots);
-        if (newtoken == NULL) goto err_out;
-        token = newtoken;
+        token = xrealloc(token, sizeof(xstring)*slots);
     }
   }
   return token;
-
-err_out:
-  for (i=0; i<*count; i++) {
-    xstring_free(token[*count]);
-  }
-  xfree(token);
-  *count = 0;
-  return NULL; 
 }
 
 void xstrings_free(xstring* s, int count) {

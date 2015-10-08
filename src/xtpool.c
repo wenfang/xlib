@@ -12,7 +12,7 @@ typedef struct xthread_s {
   pthread_t         id;
   pthread_mutex_t   lock;
   pthread_cond_t    ready;
-  xhandler_t        handler;
+  xhandler          handler;
   struct list_head  node;
   unsigned          stop;
 } xthread_t;
@@ -66,7 +66,7 @@ static void* routineNormal(void *arg) {
   return NULL;
 }
 
-static void _thread_init(xthread_t *thread, routiner routine, xhandler_t handler) {
+static void _thread_init(xthread_t *thread, routiner routine, xhandler handler) {
   pthread_mutex_init(&thread->lock, NULL);
   pthread_cond_init(&thread->ready, NULL);
   thread->handler  = handler;
@@ -79,7 +79,7 @@ static void _thread_init(xthread_t *thread, routiner routine, xhandler_t handler
   pthread_attr_destroy(&attr);
 }
 
-bool xtpool_do(xhandler_t handler) {
+bool xtpool_do(xhandler handler) {
   if (!pool) return false;
   xthread_t* thread = NULL;
   if (!list_empty(&pool->free)) {
@@ -162,7 +162,7 @@ void foo(void *arg1, void *arg2) {
 
 int main(void) {
   xtpool_init(8);
-  xhandler_t handler = XHANDLER(foo, NULL, NULL);
+  xhandler handler = XHANDLER(foo, NULL, NULL);
   xtpool_do(handler);
   xtpool_do(handler);
   xtpool_do(handler);

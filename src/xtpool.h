@@ -4,7 +4,7 @@
 #include "xhandler.h"
 #include <stdbool.h>
 
-bool xtpool_do(xhandler_t handler);
+bool xtpool_do(xhandler handler);
 
 bool xtpool_init(unsigned size);
 void xtpool_deinit(void);

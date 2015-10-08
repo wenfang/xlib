@@ -10,13 +10,15 @@
 #define XTASK_TIMEOUT 2
 
 typedef struct xtask_s {
-  xhandler_t        handler;
+  xhandler          handler;
   unsigned          flags;
   struct rb_node    _timer_node;
   struct list_head  _task_node;
   unsigned          _deadline;
   unsigned          _status;
 } xtask __attribute__((aligned(sizeof(long))));
+
+#define XTASK_IS_TIMEOUT(task) (task.flags & XTASK_TIMEOUT)
 
 void xtask_init(xtask *task);
 bool xtask_empty(void);

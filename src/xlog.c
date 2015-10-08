@@ -4,8 +4,7 @@
 
 #define MAX_MSG_LEN 512
 
-void 
-xlog_write(int priority, const char* message, ...) {
+void xlog_write(int priority, const char* message, ...) {
   char msg[MAX_MSG_LEN+1]; 
   va_list ap; 
     

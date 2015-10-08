@@ -64,7 +64,7 @@ bool xopt_new(const char* config_file) {
   char val[VAL_MAXLEN];
   int res;
 
-  xio_t* io = xio_newfile(config_file, 0);
+  xio* io = xio_newfile(config_file, 0);
   if (io == NULL) return false;
   
   xstring line = xstring_empty();
@@ -134,7 +134,7 @@ void xopt_free(void) {
 #include "xunittest.h"
 
 int main(void) {
-  xio_t *io = xio_newfile("testdata/test.conf", 1);
+  xio *io = xio_newfile("testdata/test.conf", 1);
   XTEST_NOT_EQ(io, NULL);
 
   xstring s = xstring_new("name= wenfang\n# test\n age = 12 \nlocation=beijing");

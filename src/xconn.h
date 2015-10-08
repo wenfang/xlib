@@ -1,60 +1,58 @@
-#ifndef __SPE_CONN_H
-#define __SPE_CONN_H
+#ifndef __XCONN_H
+#define __XCONN_H
 
-#include "spe_module.h"
-#include "spe_epoll.h"
+#include "xepoll.h"
 #include "xtask.h"
-#include "spe_buf.h"
-#include "spe_handler.h"
-#include "spe_util.h"
+#include "xstring.h"
+#include "xutil.h"
 #include <string.h>
 
-#define XCONN_CONNECT_TIMEOUT 1
-#define XCONN_READ_TIMEOUT    1
-#define XCONN_WRITE_TIMEOUT   2
-#define XCONN_CLOSED          4
-#define XCONN_ERROR           8
+// conn flags
+#define XCONN_CTIMEOUT  1
+#define XCONN_RTIMEOUT  1
+#define XCONN_WTIMEOUT  2
+#define XCONN_CLOSED    4
+#define XCONN_ERROR     8
 
 typedef struct {
+  xstring   buf;
+  xtask     post_rtask;
+  xtask     post_wtask;
+  unsigned  flags;
+
   int       _fd;
-  xtask_t   _rtask;
-  xtask_t   _wtask;
-  xtask_t   post_rtask;
-  xtask_t   post_wtask;
+  xtask     _rtask;
+  xtask     _wtask;
   unsigned  _rtimeout;
   unsigned  _wtimeout;
-  xstring   buf;
   xstring   _rbuf;
   xstring   _wbuf;
 
-  char*     _delim;
-  unsigned  _rbytes;
-  unsigned  _rtype:2;
-  unsigned  _wtype:1;
-  unsigned  ctimeout:1;
-  unsigned  rtimeout:1;
-  unsigned  wtimeout:1;
-  unsigned  closed:1;
-  unsigned  error:1;
-  unsigned  flags;
-} xconn_t __attribute__((aligned(sizeof(long))));
+  const char  *_delim;
+  unsigned    _rbytes;
+  unsigned    _rtype:2;
+  unsigned    _wtype:1;
+} xconn __attribute__((aligned(sizeof(long))));
 
-bool xconn_connect(xconn_t *conn, const char *addr, const char *port);
-bool xconn_read(xconn_t *conn);
-bool xconn_readbytes(xconn_t *conn, unsigned len);
-bool xconn_readuntil(xconn_t *conn, const char* delim);
+bool xconn_connect(xconn *conn, const char *addr, const char *port);
+bool xconn_read(xconn *conn);
+bool xconn_readbytes(xconn *conn, unsigned len);
+bool xconn_readuntil(xconn *conn, const char *delim);
 
-static inline bool xconn_write(xconn_t* conn, char* buf, unsigned len) {
+static inline bool xconn_write(xconn *conn, const char *buf, unsigned len) {
   ASSERT(conn && buf && len);
-  if (conn->closed || conn->error) return false;
-  return spe_buf_append(conn->_write_buffer, buf, len);
+  if (conn->flags & (XCONN_CLOSED | XCONN_ERROR)) return false;
+  xstring tmp = xstring_catlen(conn->_wbuf, buf, len);
+  if (tmp == NULL) return false;
+  conn->_wbuf = tmp;
+  return true;
 }
 
-bool xconn_flush(xconn_t* conn);
-void xconn_set_timeout(xconn_t* conn, unsigned read_expire_time, unsigned write_expire_time);
+bool xconn_flush(xconn *conn);
+void xconn_set_timeout(xconn *conn, unsigned rtimeout, unsigned wtimeout);
 
-xconn_t* xconn_newfd(unsigned fd);
-void xconn_free(xconn_t *conn);
+xconn* xconn_newfd(unsigned fd);
+void xconn_free(xconn *conn);
 
 bool xconn_init(void);
 bool xconn_deinit(void);
