@@ -42,9 +42,7 @@ bool xconn_readuntil(xconn *conn, const char *delim);
 static inline bool xconn_write(xconn *conn, const char *buf, unsigned len) {
   ASSERT(conn && buf && len);
   if (conn->flags & (XCONN_CLOSED | XCONN_ERROR)) return false;
-  xstring tmp = xstring_catlen(conn->_wbuf, buf, len);
-  if (tmp == NULL) return false;
-  conn->_wbuf = tmp;
+  conn->_wbuf = xstring_catlen(conn->_wbuf, buf, len);
   return true;
 }
 
@@ -54,7 +52,7 @@ void xconn_set_timeout(xconn *conn, unsigned rtimeout, unsigned wtimeout);
 xconn* xconn_newfd(unsigned fd);
 void xconn_free(xconn *conn);
 
-bool xconn_init(void);
-bool xconn_deinit(void);
+void xconn_init(void);
+void xconn_deinit(void);
 
 #endif

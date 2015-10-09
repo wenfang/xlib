@@ -15,9 +15,8 @@
 
 static bool sock_addr_valid(const char* addr) {
   if (!addr) return false;
-  int dot_cnt = 0;
-  int addrLen = strlen(addr);
-  for (int i=0; i<addrLen; i++) {
+  int i, dot_cnt = 0, addrLen = strlen(addr);
+  for (i=0; i<addrLen; i++) {
     if (addr[i] >='0' && addr[i]<='9') continue;
     if (addr[i] == '.') {
       dot_cnt++;
@@ -99,7 +98,7 @@ int xsock_accept_timeout(int sfd, int timeout) {
   for (;;) {
     pfd.fd = sfd;
     pfd.events = POLLIN;
-    int resv= poll(&pfd, 1, timeout);
+    int res = poll(&pfd, 1, timeout);
     // poll error or timeout
     if (res < 0) {
       if (errno == EINTR) continue;

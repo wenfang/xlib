@@ -20,30 +20,30 @@
 #define XCONN_CONNECT    1
 
 static xconn *conns;
-static int conn_maxfd;
+static int maxfd;
+static int usedfd;
 
-static void
-connect_normal(void* arg) {
-  xconn* conn = arg;
+static void _connect_normal(void *arg, void *nop) {
+  xconn *conn = arg;
   // connect timeout
-  if (conn->_read_expire_time && conn->_read_task.timeout) {
-    conn->connect_timeout = 1;
+  if (conn->_rtimeout && XTASK_IS_TIMEOUT(conn->_rtask)) {
+    conn->flags |= XCONN_CTIMEOUT;
     goto end_out;
   }
   int err = 0;
   socklen_t errlen = sizeof(err);
-  if (getsockopt(conn->_fd, SOL_SOCKET, SO_ERROR, &err, &errlen) == -1) conn->error = 1;
-  if (err) conn->error = 1;
+  if (getsockopt(conn->_fd, SOL_SOCKET, SO_ERROR, &err, &errlen) == -1) conn->flags |= XCONN_ERROR;
+  if (err) conn->flags |= XCONN_ERROR;
 
 end_out:
-  spe_epoll_disable(conn->_fd, XEPOLL_READ|XEPOLL_WRITE);
-  if (conn->_read_expire_time) spe_task_dequeue(&conn->_read_task);
+  xepoll_disable(conn->_fd, XEPOLL_READ|XEPOLL_WRITE);
+  if (conn->_rtimeout) xtask_dequeue(&conn->_rtask);
   conn->_rtype  = XCONN_READNONE;
-  conn->_wtype = XCONN_WRITENONE;
-  spe_task_schedule(&conn->post_rtask);
+  conn->_wtype  = XCONN_WRITENONE;
+  xtask_enqueue(&conn->post_rtask);
 }
 
-bool xconn_connect(xconn *conn, const char* addr, const char* port) {
+bool xconn_connect(xconn *conn, const char *addr, const char *port) {
   ASSERT(conn && conn->_rtype == XCONN_READNONE && conn->_wtype == XCONN_WRITENONE && 
       addr && port);
   // gen address hints
@@ -59,26 +59,26 @@ bool xconn_connect(xconn *conn, const char* addr, const char* port) {
   if (connect(conn->_fd, servinfo->ai_addr, servinfo->ai_addrlen) == -1) {
     if (errno == EINPROGRESS) {
       // (async):
-      spe_task_set_handler(&conn->_read_task, SPE_HANDLER1(connect_normal, conn), 0);
-      conn->connect_timeout = 0;
-      conn->_rtype      = XCONN_CONNECT;
-      conn->_wtype     = XCONN_CONNECT;
-      spe_epoll_enable(conn->_fd, XEPOLL_READ|XEPOLL_WRITE, &conn->_read_task);
-      if (conn->_read_expire_time) {
-        spe_task_schedule_timeout(&conn->_read_task, conn->_read_expire_time);
+      conn->_rtask.handler = XHANDLER(_connect_normal, conn, NULL);
+      conn->flags   &= ~XCONN_CTIMEOUT;
+      conn->_rtype  = XCONN_CONNECT;
+      conn->_wtype  = XCONN_CONNECT;
+      xepoll_enable(conn->_fd, XEPOLL_READ|XEPOLL_WRITE, &conn->_rtask);
+      if (conn->_rtimeout) {
+        xtask_enqueue_timeout(&conn->_rtask, conn->_rtimeout);
       }
       freeaddrinfo(servinfo);
       return true;
     }
-    conn->error = 1;
+    conn->flags |= XCONN_ERROR;
   }
   // (sync): connect success or failed, call handler
-  spe_task_schedule(&conn->post_rtask);
+  xtask_enqueue(&conn->post_rtask);
   freeaddrinfo(servinfo);
   return true;
 }
 
-static void read_normal(void *arg, void *nop) {
+static void _read_normal(void *arg, void *nop) {
   xconn *conn = arg;
   // check timeout
   if (conn->_rtimeout && XTASK_IS_TIMEOUT(conn->_rtask)) {
@@ -86,55 +86,50 @@ static void read_normal(void *arg, void *nop) {
     goto end_out;
   }
   // read data
-  char buf[BUF_SIZE];
   for (;;) {
-    int res = spe_buf_read_fd_append(conn->_fd, BUF_SIZE, conn->_rbuf);
-    // read error
-    if (res == -1) {
+    int res;
+    conn->_rbuf = xstring_catfd(conn->_rbuf, conn->_fd, BUF_SIZE, &res);
+    if (res == -1) { // read error
       if (errno == EINTR) continue;
       if (errno == EAGAIN) break;
       XLOG_ERR("conn error: %s", strerror(errno));
-      conn->error = 1;
-      break;
-    }
-    // peer close
-    if (res == 0) {
-      conn->closed = 1;
-      break;
+      conn->flags |= XCONN_ERROR;
+    } else if (res == 0) { // peer close
+      conn->flags |= XCONN_CLOSED;
     }
     break;
   }
   // check read type
   if (conn->_rtype == XCONN_READUNTIL) {
-    int pos = spe_buf_search(conn->_rbuf, conn->_delim);
+    int pos = xstring_search(conn->_rbuf, conn->_delim);
     if (pos != -1) {
       unsigned len = pos + strlen(conn->_delim);
-      spe_buf_append(conn->buffer, conn->_rbuf->data, len);
-      spe_buf_lconsume(conn->_rbuf, len);
+      conn->buf = xstring_catlen(conn->buf, conn->_rbuf, len);
+      xstring_range(conn->_rbuf, len, -1);
       goto end_out;
     }
   } else if (conn->_rtype == XCONN_READBYTES) {
-    if (conn->_rbytes <= conn->_rbuf->len) {
-      spe_buf_append(conn->buffer, conn->_rbuf->data, conn->_rbytes);
-      spe_buf_lconsume(conn->_rbuf, conn->_rbytes);
+    if (conn->_rbytes <= xstring_len(conn->_rbuf)) {
+      conn->buf = xstring_catlen(conn->buf, conn->_rbuf, conn->_rbytes);
+      xstring_range(conn->_rbuf, conn->_rbytes, -1);
       goto end_out;
     }
   } else if (conn->_rtype == XCONN_READ) {
-    if (conn->_rbuf->len > 0) { 
-      spe_buf_append(conn->buffer, conn->_rbuf->data, conn->_rbuf->len);
-      spe_buf_clean(conn->_rbuf);
+    if (xstring_len(conn->_rbuf) > 0) { 
+      conn->buf = xstring_catxs(conn->buf, conn->_rbuf);
+      xstring_clean(conn->_rbuf);
       goto end_out;
     }
   }
   // check error and close 
-  if (conn->closed || conn->error) goto end_out;
+  if (conn->flags & (XCONN_CLOSED | XCONN_ERROR)) goto end_out;
   return;
 
 end_out:
-  spe_epoll_disable(conn->_fd, XEPOLL_READ);
-  if (conn->_read_expire_time) spe_task_dequeue(&conn->_read_task);
+  xepoll_disable(conn->_fd, XEPOLL_READ);
+  if (conn->_rtimeout) xtask_dequeue(&conn->_rtask);
   conn->_rtype = XCONN_READNONE;
-  spe_task_schedule(&conn->post_rtask);
+  xtask_enqueue(&conn->post_rtask);
 }
 
 static bool _readsync(xconn *conn) {
@@ -153,7 +148,7 @@ static bool _readsync(xconn *conn) {
 }
 
 static void _readasync(xconn *conn, unsigned rtype) {
-  conn->_rtask.handler = XHANDLER(read_normal, conn, NULL);
+  conn->_rtask.handler = XHANDLER(_read_normal, conn, NULL);
   conn->_rtimeout = 0;
   conn->_rtype    = rtype;
   xepoll_enable(conn->_fd, XEPOLL_READ, &conn->_rtask);
@@ -248,7 +243,8 @@ end_out:
 
 bool xconn_flush(xconn *conn) {
   ASSERT(conn && conn->_wtype == XCONN_WRITENONE);
-  if (conn->flags & XCONN_CLOSED || conn->flags & XCONN_ERROR) return false;
+  if (conn->flags & (XCONN_CLOSED | XCONN_ERROR)) return false;
+  // sync write
   int res = write(conn->_fd, conn->_wbuf, xstring_len(conn->_wbuf));
   if (res < 0) {
     if (errno == EPIPE) {
@@ -265,8 +261,9 @@ bool xconn_flush(xconn *conn) {
     xtask_enqueue(&conn->post_wtask);
     return true;
   }
+  // async write
   conn->_wtask.handler = XHANDLER(write_normal, conn, NULL);
-  conn->flags   &= ~XCONN_CTIMEOUT;
+  conn->flags   &= ~XCONN_WTIMEOUT;
   conn->_wtype  = XCONN_WRITE;
   xepoll_enable(conn->_fd, XEPOLL_WRITE, &conn->_wtask);
   if (conn->_wtimeout) {
@@ -281,7 +278,8 @@ void xconn_set_timeout(xconn *conn, unsigned rtimeout, unsigned wtimeout) {
   conn->_wtimeout = wtimeout;
 }
 
-static bool _init_conn(xconn *conn, unsigned fd) {
+static void _init_conn(xconn *conn, unsigned fd) {
+  if (fd > usedfd) usedfd = fd;
   conn->_fd = fd;
   xtask_init(&conn->_rtask);
   xtask_init(&conn->_wtask);
@@ -291,24 +289,20 @@ static bool _init_conn(xconn *conn, unsigned fd) {
   conn->buf   = xstring_empty();
   conn->_rbuf = xstring_empty();
   conn->_wbuf = xstring_empty();
-  if (!conn->buf || !conn->_rbuf || !conn->_wbuf) {
-    xstring_free(conn->buf);
-    xstring_free(conn->_rbuf);
-    xstring_free(conn->_wbuf);
-    return false;
-  }
-  return true;
 }
 
 xconn* xconn_newfd(unsigned fd) {
-  if (unlikely(fd >= conn_maxfd)) return NULL;
+  if (unlikely(fd >= maxfd)) return NULL;
 
   xsock_set_block(fd, 0);
   xconn *conn = &conns[fd];
-  if (conn->_fd == 0 && !_init_conn(conn, fd)) return NULL;
-  xstring_clean(conn->buf);
-  xstring_clean(conn->_rbuf);
-  xstring_clean(conn->_wbuf);
+  if (conn->_fd == 0) {
+    _init_conn(conn, fd);
+  } else {
+    xstring_clean(conn->buf);
+    xstring_clean(conn->_rbuf);
+    xstring_clean(conn->_wbuf);
+  }
   // init conn status
   conn->_rtimeout = 0;
   conn->_wtimeout = 0;
@@ -328,23 +322,45 @@ void xconn_free(xconn *conn) {
   xsock_close(conn->_fd);
 }
 
-bool xconn_init(void) {
+void xconn_init(void) {
   conns = xcalloc(sizeof(xconn)*global_conf.maxfd);
-  if (!conns) return false;
-  conn_maxfd = global_conf.maxfd;
-  return true;
+  maxfd = global_conf.maxfd;
 }
 
-bool xconn_deinit(void) {
+void xconn_deinit(void) {
+  int i;
+  for(i=0; i<=usedfd; i++) {
+    xconn *conn = &conns[i];
+    xstring_free(conn->buf);
+    xstring_free(conn->_rbuf);
+    xstring_free(conn->_wbuf);
+  }
   xfree(conns);
-  return true;
 }
 
 #ifdef __XCONN_TEST
 
 #include "xunittest.h"
 
+void conn_ok(void *arg1, void *arg2) {
+  printf("conn_ok called\n");
+}
+
 int main(void) {
+  xconf_load();
+  xconn_init();
+  xepoll_init();
+  int cfd = xsock_tcp();
+  xconn *conn = xconn_newfd(cfd);
+  conn->post_rtask.handler = XHANDLER(conn_ok, conn, NULL);
+  xconn_connect(conn, "127.0.0.1", "80");
+  for (;;) {
+    xepoll_process(300); 
+    xtask_process();
+  }
+  xconn_free(conn);
+  xepoll_deinit();
+  xconn_deinit();
   return 0;
 }
 

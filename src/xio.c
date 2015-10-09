@@ -165,23 +165,24 @@ int main(void) {
 
   xstring_clean(s);
   xio_readuntil(io, " ", &s);
-  XTEST_STRING_EQ(s, "this");
+  XTEST_STRING_EQ(s, "this ");
 
   xstring_clean(s);
   xio_readuntil(io, " ", &s);
-  XTEST_STRING_EQ(s, "is");
+  XTEST_STRING_EQ(s, "is ");
 
   xstring_clean(s);
   xio_readuntil(io, " ", &s);
-  XTEST_STRING_EQ(s, "");
+  XTEST_STRING_EQ(s, " ");
 
   xstring_clean(s);
   xio_readuntil(io, " ", &s);
-  XTEST_STRING_EQ(s, "a");
+  XTEST_STRING_EQ(s, "a ");
 
   xstring_clean(s);
   xio_readuntil(io, " ", &s);
   XTEST_STRING_EQ(s, "test");
+  XTEST_EQ(io->_closed, 1);
 
   xstring_free(s);
   xio_free(io);

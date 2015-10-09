@@ -67,7 +67,7 @@ void xepoll_process(int timeout) {
   struct epoll_event* e;
   xepoll *epoll_t;
   int i, events_n;
-  
+ 
   events_n = epoll_wait(epfd, epoll_events, maxfd, timeout);
   if (unlikely(events_n < 0)) {
     if (errno == EINTR) return;

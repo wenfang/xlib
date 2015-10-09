@@ -14,11 +14,11 @@ bool xsock_set_block(int fd, int block);
 int xsock_tcp_server(const char* addr, int port);
 int xsock_udp_server(const char* addr, int port);
 
-static inline int xsock_tcp_socket(void) {
+static inline int xsock_tcp(void) {
   return socket(AF_INET, SOCK_STREAM, 0);
 }
 
-static inline int xsock_udp_socket(void) {
+static inline int xsock_udp(void) {
   return socket(AF_INET, SOCK_DGRAM, 0);
 }
 

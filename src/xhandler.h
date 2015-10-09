@@ -1,12 +1,12 @@
 #ifndef __XHANDLER_H
 #define __XHANDLER_H
 
-typedef void (*xHandler)(void*, void*);
+typedef void (*xhandlerFunc)(void*, void*);
 
 typedef struct xhandler_s {
-  xHandler  handler;
-  void      *arg1;
-  void      *arg2;
+  xhandlerFunc  handler;
+  void          *arg1;
+  void          *arg2;
 } xhandler __attribute__((aligned(sizeof(long))));
 
 
