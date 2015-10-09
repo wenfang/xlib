@@ -90,10 +90,16 @@ int main(int argc, char* argv[]) {
     fprintf(stderr, "[ERROR] spe_daemon\n");
     return 1;
   }
-  xmodule_master_init(XCORE_MODULE);
-  xmodule_master_init(XUSER_MODULE);
+  if (!xmodule_master_init(XCORE_MODULE)) {
+    fprintf(stderr, "[ERROR] xmodule_master_init core error\n");
+    return 1;
+  }
+  if (!xmodule_master_init(XUSER_MODULE)) {
+    fprintf(stderr, "[ERROR] xmodule_master_init user error\n");
+    return 1;
+  }
   // fork worker
-  int res;
+  int res = 1;
   for (int i=0; i<cycle.procs; i++) {
     res = xworker_fork();
     if (res <= 0) break;

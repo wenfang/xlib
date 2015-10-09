@@ -5,11 +5,13 @@
 #include "xtask.h"
 #include "xsignal.h"
 #include "xserver.h"
+#include "xuser.h"
 
 xmodule *xmodules[] = {
   &xepoll_module,
   &xconn_module,
   &xserver_module,
+  &xuser_module,
 };
 
 bool xmodule_master_init(int type) {

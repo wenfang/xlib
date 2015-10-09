@@ -14,7 +14,6 @@ static LIST_HEAD(_head);
 
 static void _accept(void *arg, void *nop) {
   xserver *server = arg;
-  printf("_accept called\n");
   int cfd = xsock_accept(server->_sfd);
   if (cfd <= 0) return;
   if (!server->_handlerFunc) {

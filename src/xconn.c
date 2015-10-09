@@ -325,6 +325,7 @@ void xconn_free(xconn *conn) {
 static bool _init(void) {
   conns = xcalloc(sizeof(xconn)*cycle.maxfd);
   maxfd = cycle.maxfd;
+  return true;
 }
 
 static void _deinit(void) {
