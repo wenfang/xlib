@@ -35,8 +35,8 @@ int xsock_tcp_server(const char* addr, int port) {
   int flags = 1;
   if (setsockopt(sfd, SOL_SOCKET, SO_REUSEADDR, (void*)&flags, sizeof(flags)) < 0) goto error_out;
   if (setsockopt(sfd, SOL_SOCKET, SO_KEEPALIVE, (void*)&flags, sizeof(flags)) < 0) goto error_out;
-  flags = 5;
-  if (setsockopt(sfd, IPPROTO_TCP, TCP_DEFER_ACCEPT, &flags, sizeof(flags)) < 0) goto error_out;
+  //flags = 5;
+  //if (setsockopt(sfd, IPPROTO_TCP, TCP_DEFER_ACCEPT, &flags, sizeof(flags)) < 0) goto error_out;
   // set linger
   struct linger ling = {0, 0};
   if (setsockopt(sfd, SOL_SOCKET, SO_LINGER, (void*)&ling, sizeof(ling)) < 0) goto error_out;
