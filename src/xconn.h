@@ -2,6 +2,7 @@
 #define __XCONN_H
 
 #include "xepoll.h"
+#include "xmodule.h"
 #include "xtask.h"
 #include "xstring.h"
 #include "xutil.h"
@@ -52,7 +53,6 @@ void xconn_set_timeout(xconn *conn, unsigned rtimeout, unsigned wtimeout);
 xconn* xconn_newfd(unsigned fd);
 void xconn_free(xconn *conn);
 
-void xconn_init(void);
-void xconn_deinit(void);
+extern xmodule xconn_module;
 
 #endif

@@ -99,7 +99,6 @@ bool xtpool_do(xhandler handler) {
     }
   }
   thread = xcalloc(sizeof(xthread_t));
-  if (!thread) return false;
   __sync_add_and_fetch(&pool->total, 1);
   _thread_init(thread, routineOnce, handler);
   return true;
@@ -112,7 +111,6 @@ bool xtpool_init(unsigned size) {
   if (size > MAX_THREAD) size = MAX_THREAD;
 
   pool = xcalloc(sizeof(xtpool_t) + size*sizeof(xthread_t));
-  if (!pool) return false;
   pool->size = size;
   INIT_LIST_HEAD(&pool->free);
   pthread_mutex_init(&pool->freeLock, NULL);

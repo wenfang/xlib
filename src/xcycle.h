@@ -3,18 +3,18 @@
 
 #include <stdbool.h>
 
-#define XMODULE_MAX  128
-
 typedef struct xcycle_s {
   int         daemon;
   int         procs;
   int         maxfd;
+  int         ticks;
   const char  *pidfile;
-  void        *ctx[XMODULE_MAX];
+  const char  *master_name;
+  const char  *worker_name;
 } xcycle;
 
-bool xcycle_init(const char *config_file);
-void xcycle_deinit(void);
+
+bool xcycle_load(void);
 
 extern xcycle cycle;
 

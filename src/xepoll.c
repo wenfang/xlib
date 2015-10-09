@@ -88,43 +88,30 @@ void xepoll_process(int timeout) {
   }
 }
 
-bool xepoll_init(void) {
+static bool _init(void) {
   epfd = epoll_create(10240);
   if (epfd < 0) {
-    XLOG_ERR("epoll_create: %s", strerror(errno));
+    XLOG_ERR("epoll_create error: %s", strerror(errno));
     return false;
   }
 
   maxfd = cycle.maxfd;
   epolls = xcalloc(sizeof(xepoll)*maxfd);
-  if (!epolls) goto err_out1;
-
 	epoll_events = xcalloc(sizeof(struct epoll_event)*maxfd);
-	if (!epoll_events) goto err_out2;
   return true;
-
-err_out2:
-  xfree(epolls);
-err_out1:
-  close(epfd);
-  return false;
 }
 
-void xepoll_deinit(void) {
+static void _deinit(void) {
   close(epfd);
   xfree(epolls);
 	xfree(epoll_events);
 }
 
-#ifdef __XEPOLL_TEST
-
-#include "xunittest.h"
-
-int main(void) {
-  xcycle_init(NULL);
-  xepoll_init();
-  xepoll_deinit();
-  return 0;
-}
-
-#endif
+xmodule xepoll_module = {
+  "xepoll",
+  XCORE_MODULE,
+  NULL,
+  _init,
+  _deinit,
+  NULL,
+};

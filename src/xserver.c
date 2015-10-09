@@ -92,34 +92,20 @@ void xserver_unregister(xserver *server) {
   xfree(server);
 }
 
-/*
-bool exit_server() {
-  xserver_t *server, *tmp;
+static void _deinit(void) {
+  xserver *server, *tmp;
   list_for_each_entry_safe(server, tmp, &_head, _node) {
-    if (server->_accept_mutex) spe_shm_mutex_destroy(server->_accept_mutex);
-    spe_sock_close(server->_sfd);
-    free(server);
+    if (server->_accept_mutex) xshm_mutex_free(server->_accept_mutex);
+    xsock_close(server->_sfd);
+    xfree(server);
   }
-  return true;
-}
-*/
-
-#ifdef __XSERVER_TEST
-
-int main(void) {
-  xcycle_init(NULL);
-  xconn_init();
-  xepoll_init();
-  xserver_register("127.0.0.1", 7879, NULL, NULL);
-  for (;;) {
-    xserver_preloop();
-    xepoll_process(300);
-    xserver_postloop();
-    xtask_process();
-  }
-  xepoll_deinit();
-  xconn_deinit();
-  return 0;
 }
 
-#endif
+xmodule xserver_module = {
+  "xserver",
+  XCORE_MODULE,
+  NULL,
+  NULL,
+  _deinit,
+  NULL,
+};

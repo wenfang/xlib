@@ -1,7 +1,7 @@
 #include "xshm.h"
 #include "xmalloc.h"
 #include "xlog.h"
-#include "xutil.h"
+
 #include <stdlib.h>
 #include <sys/mman.h>
 
@@ -39,8 +39,8 @@ pthread_mutex_t* xshm_mutex_new(void) {
   return shmux;
 }
 
-void xshm_mutex_free(pthread_mutex_t* shmux) {
-  ASSERT(shmux);
+void xshm_mutex_free(pthread_mutex_t *shmux) {
+  if (shmux == NULL) return;
   pthread_mutex_destroy(shmux);
   if (munmap(shmux, sizeof(pthread_mutex_t)) == -1) {
     XLOG_ERR("xshm_mutex munmap error");

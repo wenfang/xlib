@@ -322,12 +322,12 @@ void xconn_free(xconn *conn) {
   xsock_close(conn->_fd);
 }
 
-void xconn_init(void) {
+static bool _init(void) {
   conns = xcalloc(sizeof(xconn)*cycle.maxfd);
   maxfd = cycle.maxfd;
 }
 
-void xconn_deinit(void) {
+static void _deinit(void) {
   int i;
   for(i=0; i<=usedfd; i++) {
     xconn *conn = &conns[i];
@@ -338,30 +338,11 @@ void xconn_deinit(void) {
   xfree(conns);
 }
 
-#ifdef __XCONN_TEST
-
-#include "xunittest.h"
-
-void conn_ok(void *arg1, void *arg2) {
-  printf("conn_ok called\n");
-}
-
-int main(void) {
-  xcycle_init(NULL);
-  xconn_init();
-  xepoll_init();
-  int cfd = xsock_tcp();
-  xconn *conn = xconn_newfd(cfd);
-  conn->post_rtask.handler = XHANDLER(conn_ok, conn, NULL);
-  xconn_connect(conn, "127.0.0.1", "80");
-  for (;;) {
-    xepoll_process(300); 
-    xtask_process();
-  }
-  xconn_free(conn);
-  xepoll_deinit();
-  xconn_deinit();
-  return 0;
-}
-
-#endif
+xmodule xconn_module = {
+  "xconn",
+  XCORE_MODULE,
+  NULL,
+  _init,
+  _deinit,
+  NULL,
+};

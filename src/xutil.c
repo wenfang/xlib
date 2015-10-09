@@ -1,4 +1,5 @@
 #include "xutil.h"
+#include "xmalloc.h"
 #include <fcntl.h>
 
 int xdaemon() {
@@ -23,7 +24,7 @@ int xdaemon() {
   return 0;
 }
 
-bool xsave_pid(const char *pid_file) {
+bool xpid_save(const char *pid_file) {
   ASSERT(pid_file);
   FILE *fp;
   if (!(fp = fopen(pid_file, "w"))) return false;
@@ -32,7 +33,7 @@ bool xsave_pid(const char *pid_file) {
   return true;
 }
 
-pid_t xget_pid(const char *pid_file) {
+pid_t xpid_get(const char *pid_file) {
   ASSERT(pid_file);
   long pid;
   FILE *fp;
@@ -42,8 +43,7 @@ pid_t xget_pid(const char *pid_file) {
   return pid;
 }
 
-bool
-xremove_pid(const char* pid_file) {
+bool xpid_remove(const char *pid_file) {
   ASSERT(pid_file);
   if (unlink(pid_file)) return false;
   return true;
@@ -54,7 +54,7 @@ extern char** environ;
 static char** xargv;
 static char* xargv_last = NULL;
 
-bool xinit_proc_title(int argc, char** argv) {
+void xproctitle_init(int argc, char** argv) {
 	xargv = argv;
 
 	size_t size = 0;
@@ -62,9 +62,7 @@ bool xinit_proc_title(int argc, char** argv) {
 		size += strlen(environ[i]) + 1;
 	}
 
-	char* p = calloc(1, size);
-	if (p == NULL) return false;
-
+	char *p = xcalloc(size);
 	xargv_last = xargv[0];
 	for (int i=0; xargv[i]; i++) {
 		if (xargv_last == xargv[i]) xargv_last = xargv[i] + strlen(xargv[i]) + 1;
@@ -81,11 +79,9 @@ bool xinit_proc_title(int argc, char** argv) {
 	}
 
 	xargv_last--;
-
-	return true;
 }
 
-void xset_proc_title(char *title) {
+void xproctitle_set(const char *title) {
 	xargv[1] = NULL;
 	strncpy(xargv[0], title, xargv_last - xargv[0]);
 }

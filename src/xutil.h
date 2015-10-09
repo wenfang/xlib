@@ -27,15 +27,13 @@
 #endif
 
 
-static inline unsigned long 
-xcurrent_time() {
+static inline unsigned long xcurrent_time() {
   struct timeval tv;
   gettimeofday(&tv, NULL);
   return (tv.tv_sec * 1000 + tv.tv_usec / 1000);
 }
 
-static inline unsigned
-xcpu_count() {
+static inline unsigned xcpu_count() {
   return sysconf(_SC_NPROCESSORS_ONLN);
 }
 
@@ -50,22 +48,13 @@ xmax_open_files(unsigned file_num) {
   return true;
 }
 
-extern int
-xdaemon();
+int xdaemon();
 
-extern bool
-xsave_pid(const char* pid_file);
+pid_t xpid_get(const char *pid_file);
+bool xpid_save(const char *pid_file);
+bool xpid_remove(const char *pid_file);
 
-extern pid_t
-xget_pid(const char* pid_file);
-
-extern bool
-xremove_pid(const char* pid_file);
-
-extern bool
-xinit_proc_title(int argc, char** argv);
-
-extern void
-xset_proc_title(char* title);
+void xproctitle_init(int argc, char **argv);
+void xproctitle_set(const char *title);
 
 #endif
