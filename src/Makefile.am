@@ -1,6 +1,6 @@
 AUTOMAKE_OPTIONS=foreign
 
-bin_PROGRAMS=xstring xio xopt xtask xepoll xlist xtpool xdict xconn xserver
+bin_PROGRAMS=xstring xio xopt xtask xepoll xlist xtpool xdict xconn xserver xsignal
 
 XMALLOC = xmalloc.c xmalloc.h xlog.h xlog.c
 XSTRING = xstring.c xstring.h $(XMALLOC)
@@ -37,6 +37,9 @@ xdict_CPPFLAGS = -D__XDICT_TEST -Wall
 
 xconn_SOURCES = $(XCONN)
 xconn_CPPFLAGS = -D__XCONN_TEST -Wall
+
+xsignal_SOURCES = xsignal.c xsignal.h
+xsignal_CPPFLAGS = -D__XSIGNAL_TEST -Wall
 
 xserver_SOURCES = xserver.c xserver.h xshm.c xshm.h $(XCONN)
 xserver_CPPFLAGS = -D__XSERVER_TEST -Wall
