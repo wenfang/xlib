@@ -7,7 +7,7 @@ XSTRING = xstring.c xstring.h $(XMALLOC)
 XIO = xio.c xio.h $(XSTRING)
 XOPT = xopt.c xopt.h $(XIO)
 XTASK = xtask.c xtask.h rbtree.c rbtree.h
-XEPOLL = xepoll.c xepoll.h xconf.c xconf.h $(XOPT) $(XTASK)
+XEPOLL = xepoll.c xepoll.h xcycle.c xcycle.h $(XOPT) $(XTASK)
 XCONN = xconn.c xconn.h xsock.c xsock.h $(XEPOLL)
 
 xstring_SOURCES = $(XSTRING)

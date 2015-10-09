@@ -1,8 +1,7 @@
 #include "xutil.h"
 #include <fcntl.h>
 
-int 
-xdaemon() {
+int xdaemon() {
   switch (fork()) {
   case -1:
     return -1;
@@ -24,8 +23,7 @@ xdaemon() {
   return 0;
 }
 
-bool
-xsave_pid(const char* pid_file) {
+bool xsave_pid(const char *pid_file) {
   ASSERT(pid_file);
   FILE *fp;
   if (!(fp = fopen(pid_file, "w"))) return false;
@@ -34,8 +32,7 @@ xsave_pid(const char* pid_file) {
   return true;
 }
 
-pid_t
-xget_pid(const char* pid_file) {
+pid_t xget_pid(const char *pid_file) {
   ASSERT(pid_file);
   long pid;
   FILE *fp;
@@ -57,8 +54,7 @@ extern char** environ;
 static char** xargv;
 static char* xargv_last = NULL;
 
-bool
-xinit_proc_title(int argc, char** argv) {
+bool xinit_proc_title(int argc, char** argv) {
 	xargv = argv;
 
 	size_t size = 0;
@@ -89,8 +85,7 @@ xinit_proc_title(int argc, char** argv) {
 	return true;
 }
 
-void
-xset_proc_title(char* title) {
+void xset_proc_title(char *title) {
 	xargv[1] = NULL;
 	strncpy(xargv[0], title, xargv_last - xargv[0]);
 }

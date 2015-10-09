@@ -2,7 +2,7 @@
 #include "xshm.h"
 #include "xmalloc.h"
 #include "xsock.h"
-#include "xconf.h"
+#include "xcycle.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -107,7 +107,7 @@ bool exit_server() {
 #ifdef __XSERVER_TEST
 
 int main(void) {
-  xconf_load();
+  xcycle_init(NULL);
   xconn_init();
   xepoll_init();
   xserver_register("127.0.0.1", 7879, NULL, NULL);

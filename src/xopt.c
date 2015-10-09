@@ -1,4 +1,5 @@
 #include "xio.h"
+#include "xlog.h"
 #include "xopt.h"
 #include "xmalloc.h"
 #include "list.h"
@@ -17,27 +18,25 @@ typedef struct xopt_s {
  	char key[KEY_MAXLEN];      // string key
 	char val[VAL_MAXLEN];      // string value
 	struct list_head  node;
-} xopt_t;
+} xopt;
 
 static LIST_HEAD(options);
 
-static bool xopt_set(const char* sec, const char* key, const char* val) {
-  xopt_t* opt = xcalloc(sizeof(xopt_t));
-  if (opt == NULL) return false;
-  // set section and key 
+static void _set(const char *sec, const char *key, const char *val) {
+  xopt* opt = xcalloc(sizeof(xopt));
+  
   strncpy(opt->sec, sec, SEC_MAXLEN);
   strncpy(opt->key, key, KEY_MAXLEN);
   strncpy(opt->val, val, VAL_MAXLEN);
   // add to options list
   INIT_LIST_HEAD(&opt->node);
   list_add_tail(&opt->node, &options);
-  return true;
 }
 
-int xopt_int(const char* sec, const char* key, int def) {
+int xopt_int(const char *sec, const char *key, int def) {
   if (key == NULL) return def;
   if (sec == NULL) sec = "global";
-  xopt_t* entry = NULL;
+  xopt *entry = NULL;
   list_for_each_entry(entry, &options, node) {
     if (!strcmp(sec, entry->sec) && !strcmp(key, entry->key)) {
       return atoi(entry->val);
@@ -46,10 +45,10 @@ int xopt_int(const char* sec, const char* key, int def) {
   return def;
 }
 
-const char* xopt_string(const char* sec, const char* key, const char* def) {
+const char* xopt_string(const char *sec, const char *key, const char *def) {
   if (key == NULL) return def;
   if (sec == NULL) sec = "global";
-  xopt_t* entry = NULL;
+  xopt *entry = NULL;
   list_for_each_entry(entry, &options, node) {
     if (!strcmp(sec, entry->sec) && !strcmp(key, entry->key)) {
       return entry->val;
@@ -58,7 +57,7 @@ const char* xopt_string(const char* sec, const char* key, const char* def) {
   return def;
 }
 
-bool xopt_new(const char* config_file) {
+bool xopt_new(const char *config_file) {
   char sec[SEC_MAXLEN];
   char key[KEY_MAXLEN];
   char val[VAL_MAXLEN];
@@ -68,8 +67,6 @@ bool xopt_new(const char* config_file) {
   if (io == NULL) return false;
   
   xstring line = xstring_empty();
-  if (line == NULL) return false;
-
   // set default section
   strcpy(sec, "global");
  
@@ -109,7 +106,7 @@ bool xopt_new(const char* config_file) {
     val[VAL_MAXLEN-1] = 0;
     xstrings_free(tokens, count);
     // set option value
-    xopt_set(sec, key, val);
+    _set(sec, key, val);
 
 next:
     if (res <= 0) break;
@@ -122,7 +119,7 @@ next:
 }
 
 void xopt_free(void) {
-  xopt_t *entry, *tmp;
+  xopt *entry, *tmp;
   list_for_each_entry_safe(entry, tmp, &options, node) {
     list_del_init(&entry->node);
     xfree(entry);

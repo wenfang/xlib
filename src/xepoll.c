@@ -1,5 +1,5 @@
 #include "xepoll.h"
-#include "xconf.h"
+#include "xcycle.h"
 #include "xmalloc.h"
 #include "xsock.h"
 #include "xutil.h"
@@ -95,7 +95,7 @@ bool xepoll_init(void) {
     return false;
   }
 
-  maxfd = global_conf.maxfd;
+  maxfd = cycle.maxfd;
   epolls = xcalloc(sizeof(xepoll)*maxfd);
   if (!epolls) goto err_out1;
 
@@ -121,7 +121,7 @@ void xepoll_deinit(void) {
 #include "xunittest.h"
 
 int main(void) {
-  xconf_load();
+  xcycle_init(NULL);
   xepoll_init();
   xepoll_deinit();
   return 0;

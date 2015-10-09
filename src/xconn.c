@@ -1,5 +1,5 @@
 #include "xconn.h"
-#include "xconf.h"
+#include "xcycle.h"
 #include "xmalloc.h"
 #include "xtask.h"
 #include "xsock.h"
@@ -323,8 +323,8 @@ void xconn_free(xconn *conn) {
 }
 
 void xconn_init(void) {
-  conns = xcalloc(sizeof(xconn)*global_conf.maxfd);
-  maxfd = global_conf.maxfd;
+  conns = xcalloc(sizeof(xconn)*cycle.maxfd);
+  maxfd = cycle.maxfd;
 }
 
 void xconn_deinit(void) {
@@ -347,7 +347,7 @@ void conn_ok(void *arg1, void *arg2) {
 }
 
 int main(void) {
-  xconf_load();
+  xcycle_init(NULL);
   xconn_init();
   xepoll_init();
   int cfd = xsock_tcp();

@@ -1,20 +1,21 @@
-#ifndef __XCONF_H
-#define __XCONF_H
+#ifndef __XCYCLE_H
+#define __XCYCLE_H
 
 #include <stdbool.h>
 
 #define XMODULE_MAX  128
 
-typedef struct xconf_s {
+typedef struct xcycle_s {
   int         daemon;
   int         procs;
   int         maxfd;
   const char  *pidfile;
   void        *ctx[XMODULE_MAX];
-} xconf;
+} xcycle;
 
-bool xconf_load(void);
+bool xcycle_init(const char *config_file);
+void xcycle_deinit(void);
 
-extern xconf global_conf;
+extern xcycle cycle;
 
 #endif
