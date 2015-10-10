@@ -47,6 +47,10 @@ static inline bool xconn_write(xconn *conn, const char *buf, unsigned len) {
   return true;
 }
 
+static inline bool xconn_writes(xconn *conn, const char *buf) {
+  return xconn_write(conn, buf, strlen(buf));
+}
+
 bool xconn_flush(xconn *conn);
 void xconn_set_timeout(xconn *conn, unsigned rtimeout, unsigned wtimeout);
 

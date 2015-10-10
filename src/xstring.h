@@ -2,6 +2,7 @@
 #define __XSTRING_H
 
 #include <stdio.h>
+#include <stdarg.h>
 
 typedef char* xstring;
 
@@ -28,6 +29,8 @@ xstring xstring_catlen(xstring s, const void* t, size_t len);
 xstring xstring_cat(xstring s, const char* t);
 xstring xstring_catxs(xstring s, xstring t);
 xstring xstring_catfd(xstring s, int fd, unsigned len, int *res);
+xstring xstring_catvprintf(xstring s, const char *fmt, va_list ap);
+xstring xstring_catprintf(xstring s, const char *fmt, ...);
 
 xstring xstring_cpylen(xstring s, const void* t, size_t len);
 xstring xstring_cpy(xstring s, const char* t);

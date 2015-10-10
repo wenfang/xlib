@@ -30,7 +30,7 @@ static xworker workers[MAX_WORKER];
 // for worker
 static int control_fd;
 static xtask control_task;
-static bool worker_stop;
+static bool _stop;
 
 // for master
 static int get_slot(void) {
@@ -91,16 +91,21 @@ void xworker_stop(void) {
 
 // for worker
 static void _control_handler(void *nop1, void *nop2) {
-  int comm;
-  int res = read(control_fd, &comm, sizeof(int));
-  if (res < 0) return;
-  if (res == 0) { // master exit, worker exit
-    worker_stop = 1;
+  int command;
+  int res = read(control_fd, &command, sizeof(int));
+  if (res < 0) {
+    XLOG_ERR("worker read control_fd error");
     return;
   }
-  if (comm == WORKER_STOP) {
-    worker_stop = 1;
+  if (res == 0) { // master exit, worker exit
+    _stop = true;
+    return;
   }
+  if (command == WORKER_STOP) {
+    _stop = true;
+    return;
+  }
+  XLOG_ERR("invalid command: %d", command);
 }
 
 void xworker_process(void) {
@@ -118,7 +123,7 @@ void xworker_process(void) {
   xepoll_enable(control_fd, XEPOLL_READ, &control_task);
   // event loop
   unsigned timeout;
-  while (!worker_stop) {
+  while (!_stop) {
     timeout = !xtask_empty() ? 0 : cycle.ticks;
     xserver_preloop();
     xepoll_process(timeout);

@@ -80,6 +80,43 @@ xstring xstring_catfd(xstring s, int fd, unsigned len, int *res) {
   return s;
 }
 
+xstring xstring_catvprintf(xstring s, const char *fmt, va_list ap) {
+  va_list cpy;
+  char staticbuf[1024], *buf = staticbuf;
+  size_t buflen = strlen(fmt) * 2;
+  
+  if (buflen > sizeof(staticbuf)) {
+    buf = xmalloc(buflen);
+  } else {
+    buflen = sizeof(staticbuf);
+  }
+
+  while(1) {
+    buf[buflen-2] = '\0';
+    va_copy(cpy, ap);
+    vsnprintf(buf, buflen, fmt, cpy);
+    va_end(cpy);
+    if (buf[buflen-2] == '\0') break;
+    
+    if (buf != staticbuf) xfree(buf);
+    buflen *= 2;
+    buf = xmalloc(buflen);
+  }
+  
+  xstring t = xstring_cat(s, buf);
+  if (buf != staticbuf) xfree(buf);
+  return t;
+}
+
+xstring xstring_catprintf(xstring s, const char *fmt, ...) {
+  va_list ap;
+  xstring t;
+  va_start(ap, fmt);
+  t = xstring_catvprintf(s, fmt, ap); 
+  va_end(ap);
+  return t;
+}
+
 xstring xstring_cpylen(xstring s, const void* t, size_t len) {
   xstring_hdr_t* sh = (void*)(s-sizeof(xstring_hdr_t));
   if (sh->size < len) {
@@ -244,6 +281,9 @@ int main(void) {
 
   xstring_clean(s);
   XTEST_STRING_EQ(s, "");
+
+  s = xstring_catprintf(s, "%d %d", 10, 20);
+  XTEST_STRING_EQ(s, "10 20");
 
   s = xstring_cpy(s, " this is    a test another   string");
 

@@ -1,4 +1,5 @@
 #include "xuser.h"
+#include "cJSON.h"
 
 static xserver *server1;
 static xserver *server2;
@@ -11,15 +12,18 @@ static void _conn_exit(void *arg1, void *arg2) {
 static void mainHandler(void *arg1, void *arg2) {
   xconn *conn = arg1;
   conn->post_wtask.handler = XHANDLER(_conn_exit, conn, NULL);
-  xconn_write(conn, "OK\r\n", 4);
+  xconn_writes(conn, "OK\r\n");
   xconn_flush(conn);
 }
 
 static void monitorHandler(void *arg1, void *arg2) {
   xconn *conn = arg1;
+  cJSON *json = cJSON_CreateObject();
+  cJSON_AddItemToObject(json, "name", cJSON_CreateString("wenfang"));
   conn->post_wtask.handler = XHANDLER(_conn_exit, conn, NULL);
-  xconn_write(conn, "MONITOR\r\n", 9);
+  xconn_writes(conn, cJSON_PrintUnformatted(json));
   xconn_flush(conn);
+  cJSON_Delete(json);
 }
 
 static bool _init(void) {

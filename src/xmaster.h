@@ -1,5 +1,5 @@
-#ifndef __XMAIN_H
-#define __XMAIN_H 
+#ifndef __XMASTER_H
+#define __XMASTER_H 
 
 #include "xcycle.h"
 #include "xworker.h"

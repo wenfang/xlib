@@ -6,6 +6,7 @@
 #include "xhandler.h"
 #include <stdbool.h>
 
+// xtask flags
 #define XTASK_FAST    1
 #define XTASK_TIMEOUT 2
 
