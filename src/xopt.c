@@ -61,19 +61,18 @@ bool xopt_new(const char *config_file) {
   char sec[SEC_MAXLEN];
   char key[KEY_MAXLEN];
   char val[VAL_MAXLEN];
-  int res;
 
-  xio* io = xio_newfile(config_file, 0);
+  xio *io = xio_newfile(config_file, 0);
   if (io == NULL) {
     XLOG_ERR("xio_newfile %s error", config_file);
     return false;
   }
   
-  xstring line = xstring_empty();
   // set default section
   strcpy(sec, "global");
  
-  res = xio_readuntil(io, "\n", &line); 
+  xstring line = xstring_empty();
+  int res = xio_readuntil(io, "\n", &line); 
   while ((res > 0) || (res <=0 && xstring_len(line) > 0)) {
     // get one line from file
     xstring_strim(line, " \r\t\n");

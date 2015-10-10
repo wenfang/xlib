@@ -37,8 +37,7 @@ static inline unsigned xcpu_count() {
   return sysconf(_SC_NPROCESSORS_ONLN);
 }
 
-static inline bool
-xmax_open_files(unsigned file_num) {
+static inline bool xmax_open_files(unsigned file_num) {
   struct rlimit r;
   r.rlim_cur = file_num;
   r.rlim_max = file_num;

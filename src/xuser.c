@@ -9,15 +9,22 @@ static void _conn_exit(void *arg1, void *arg2) {
   xconn_free(conn);
 }
 
+static void _read_command(void *arg1, void *arg2) {
+  xconn *conn = arg1;
+  xconn_writes(conn, "HTTP/1.1 200 OK\r\n");
+  xconn_flush(conn);
+}
+
 static void mainHandler(void *arg1, void *arg2) {
   xconn *conn = arg1;
+  conn->post_rtask.handler = XHANDLER(_read_command, conn, NULL);
   conn->post_wtask.handler = XHANDLER(_conn_exit, conn, NULL);
-  xconn_writes(conn, "OK\r\n");
-  xconn_flush(conn);
+  xconn_readuntil(conn, "\r\n\r\n");
 }
 
 static void monitorHandler(void *arg1, void *arg2) {
   xconn *conn = arg1;
+
   cJSON *json = cJSON_CreateObject();
   cJSON_AddItemToObject(json, "name", cJSON_CreateString("wenfang"));
   conn->post_wtask.handler = XHANDLER(_conn_exit, conn, NULL);

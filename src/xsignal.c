@@ -15,12 +15,6 @@ static int      queue[MAX_SIGNAL];
 static xsignal  state[MAX_SIGNAL];
 static sigset_t blocked;
 
-void xsignal_init(void) {
-  queue_len = 0;
-  memset(queue, 0, sizeof(queue));
-  memset(state, 0, sizeof(state));
-  sigfillset(&blocked);
-}
 
 static void _common_handler(int sig) {
 	// not handler this signal, ignore
@@ -54,11 +48,10 @@ void xsignal_register(int sig, xsignalHandlerFunc handlerFunc) {
 void xsignal_process(void) {
   if (queue_len == 0) return;
 
-  int i;
 	sigset_t old;
 	sigprocmask(SIG_SETMASK, &blocked, &old);
  	// check signal queue	
-	for (i=0; i<queue_len; i++) {
+	for (int i=0; i<queue_len; i++) {
 		int sig = queue[i];
  		xsignal *desc = &state[sig];
 		if (desc->cnt) {
@@ -70,11 +63,19 @@ void xsignal_process(void) {
 	sigprocmask(SIG_SETMASK, &old, NULL);  
 }
 
-#ifdef __XSIGNAL_TEST
-
-int main(void) {
-  xsignal_init();
-  xsignal_process();
-  return 0;
+static bool _init(void) {
+  queue_len = 0;
+  memset(queue, 0, sizeof(queue));
+  memset(state, 0, sizeof(state));
+  sigfillset(&blocked);
+  return true;
 }
-#endif
+
+xmodule xsignal_module = {
+  "xsignal",
+  XCORE_MODULE,
+  _init,
+  NULL,
+  NULL,
+  NULL,
+};

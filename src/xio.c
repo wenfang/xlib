@@ -14,8 +14,7 @@
 #define XIO_READBYTES    2
 #define XIO_READUNTIL    3
 
-static int _read_common(xio* io, xstring* s) {
-
+static int _read_common(xio *io, xstring *s) {
   int res; 
   for (;;) {
     if (io->_rtype == XIO_READ) {
@@ -62,7 +61,7 @@ static int _read_common(xio* io, xstring* s) {
   return res;
 }
 
-int xio_read(xio* io, xstring* s) {
+int xio_read(xio *io, xstring *s) {
   ASSERT(io && s);
   if (io->_closed) return XIO_CLOSED;
   if (io->_error) return XIO_ERROR;
@@ -71,7 +70,7 @@ int xio_read(xio* io, xstring* s) {
   return _read_common(io, s);
 }
 
-int xio_readbytes(xio* io, unsigned len, xstring* s) {
+int xio_readbytes(xio *io, unsigned len, xstring *s) {
   ASSERT(io && len && s);
   if (io->_closed) return XIO_CLOSED;
   if (io->_error) return XIO_ERROR;
@@ -81,7 +80,7 @@ int xio_readbytes(xio* io, unsigned len, xstring* s) {
   return _read_common(io, s);
 }
 
-int xio_readuntil(xio* io, const char* delim, xstring* s) {  
+int xio_readuntil(xio *io, const char *delim, xstring *s) {  
   ASSERT(io && delim && s);
   if (io->_closed) return XIO_CLOSED;
   if (io->_error) return XIO_ERROR;
@@ -119,7 +118,7 @@ int xio_flush(xio *io) {
   return total;
 }
 
-xio* xio_newfile(const char* fname, int create) {
+xio* xio_newfile(const char *fname, int create) {
   ASSERT(fname);
   int fd;
   if (create) {
