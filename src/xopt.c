@@ -64,7 +64,10 @@ bool xopt_new(const char *config_file) {
   int res;
 
   xio* io = xio_newfile(config_file, 0);
-  if (io == NULL) return false;
+  if (io == NULL) {
+    XLOG_ERR("xio_newfile %s error", config_file);
+    return false;
+  }
   
   xstring line = xstring_empty();
   // set default section
@@ -76,10 +79,11 @@ bool xopt_new(const char *config_file) {
     xstring_strim(line, " \r\t\n");
     if (xstring_len(line) == 0 || *line == '#') goto next;
     // section line, get section
-    if (*line == '[' && *(line+xstring_len(line)) == ']') {
+    if (*line == '[' && *(line+xstring_len(line)-1) == ']') {
       xstring_strim(line, " []\t");
       // section can't be null
       if (xstring_len(line) == 0) {
+        XLOG_ERR("section is null");
         xstring_free(line);
         xio_free(io);
         return false;
@@ -92,6 +96,7 @@ bool xopt_new(const char *config_file) {
     int count;
     xstring* tokens = xstring_split(line, "=", &count);
     if (count != 2) {
+      XLOG_ERR("line split error: %s", line);
       xstrings_free(tokens, count);
       xstring_free(line);
       xio_free(io);

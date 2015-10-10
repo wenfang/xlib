@@ -2,11 +2,11 @@
 #define __XTPOOL_H
 
 #include "xhandler.h"
+#include "xmodule.h"
 #include <stdbool.h>
 
 bool xtpool_do(xhandler handler);
 
-bool xtpool_init(unsigned size);
-void xtpool_deinit(void);
+extern xmodule xtpool_module;
 
 #endif

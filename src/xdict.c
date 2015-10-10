@@ -53,9 +53,7 @@ int xdict_add(xdict *d, void *key, void *value) {
 
 
 xdict* xdict_new(xdictType *type, void *privDataPtr) {
-  xdict* d = xmalloc(sizeof(xdict));
-  if (d == NULL) return NULL;
-
+  xdict *d = xmalloc(sizeof(xdict));
   xdict_reset(d);
   d->type = type;
   d->privdata = privDataPtr;

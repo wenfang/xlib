@@ -1,4 +1,5 @@
 #include "xtpool.h"
+#include "xopt.h"
 #include "xmalloc.h"
 #include "xutil.h"
 #include "list.h"
@@ -15,34 +16,34 @@ typedef struct xthread_s {
   xhandler          handler;
   struct list_head  node;
   unsigned          stop;
-} xthread_t;
+} xthread;
 
 typedef struct xtpool_s {
   unsigned          size;
-  unsigned          total;
+  unsigned          avail;
   struct list_head  free;
   pthread_mutex_t   freeLock;
-  xthread_t         threads[];
-} xtpool_t;
+  xthread           threads[];
+} xtpool;
 
-static xtpool_t *pool;
+static xtpool *pool;
 
 typedef void *(*routiner)(void*);
 
-static void* routineOnce(void *arg) {
-  xthread_t *thread = arg;
+static void* _once(void *arg) {
+  xthread *thread = arg;
 
   XHANDLER_CALL(thread->handler);
 
   pthread_mutex_destroy(&thread->lock);
   pthread_cond_destroy(&thread->ready);
   xfree(thread);
-  __sync_sub_and_fetch(&pool->total, 1);
+  __sync_sub_and_fetch(&pool->avail, 1);
   return NULL;
 }
 
-static void* routineNormal(void *arg) {
-  xthread_t *thread = arg;
+static void* _normal(void *arg) {
+  xthread *thread = arg;
   // run thread
   while (1) {
     pthread_mutex_lock(&thread->lock);
@@ -62,11 +63,11 @@ static void* routineNormal(void *arg) {
   // quit thread
   pthread_mutex_destroy(&thread->lock);
   pthread_cond_destroy(&thread->ready);
-  __sync_sub_and_fetch(&pool->total, 1);
+  __sync_sub_and_fetch(&pool->avail, 1);
   return NULL;
 }
 
-static void _thread_init(xthread_t *thread, routiner routine, xhandler handler) {
+static void _thread_init(xthread *thread, routiner routine, xhandler handler) {
   pthread_mutex_init(&thread->lock, NULL);
   pthread_cond_init(&thread->ready, NULL);
   thread->handler  = handler;
@@ -81,11 +82,11 @@ static void _thread_init(xthread_t *thread, routiner routine, xhandler handler) 
 
 bool xtpool_do(xhandler handler) {
   if (!pool) return false;
-  xthread_t* thread = NULL;
+  xthread *thread = NULL;
   if (!list_empty(&pool->free)) {
     // get free thread
     pthread_mutex_lock(&pool->freeLock);
-    if ((thread = list_first_entry(&pool->free, xthread_t, node))) {
+    if ((thread = list_first_entry(&pool->free, xthread, node))) {
       list_del_init(&thread->node);
     }
     pthread_mutex_unlock(&pool->freeLock);
@@ -98,40 +99,38 @@ bool xtpool_do(xhandler handler) {
       return true;
     }
   }
-  thread = xcalloc(sizeof(xthread_t));
-  __sync_add_and_fetch(&pool->total, 1);
-  _thread_init(thread, routineOnce, handler);
+  thread = xcalloc(sizeof(xthread));
+  __sync_add_and_fetch(&pool->avail, 1);
+  _thread_init(thread, _once, handler);
   return true;
 }
 
-bool xtpool_init(unsigned size) {
-  if (pool) return false;
-  
+static bool _init(void) {
+  int size = xopt_int("tpool", "size", -1);
+  if (size <= 0) return true;
   if (size == 0) size = xcpu_count() * 2;
   if (size > MAX_THREAD) size = MAX_THREAD;
 
-  pool = xcalloc(sizeof(xtpool_t) + size*sizeof(xthread_t));
+  pool = xcalloc(sizeof(xtpool) + size*sizeof(xthread));
   pool->size = size;
   INIT_LIST_HEAD(&pool->free);
   pthread_mutex_init(&pool->freeLock, NULL);
   // enable thread
-  __sync_add_and_fetch(&pool->total, pool->size);
-  int i;
-  for (i=0; i<pool->size; i++) {
-    xthread_t *thread = &pool->threads[i];
+  __sync_add_and_fetch(&pool->avail, pool->size);
+  for (int i=0; i<pool->size; i++) {
+    xthread *thread = &pool->threads[i];
     INIT_LIST_HEAD(&thread->node);
     list_add_tail(&thread->node, &pool->free);
-    _thread_init(thread, routineNormal, XHANDLER_EMPTY);
+    _thread_init(thread, _normal, XHANDLER_EMPTY);
   }
   return true;
 }
 
-void xtpool_deinit(void) {
+static void _deinit(void) {
   if (!pool) return;
   // set stop flag
-  int i;
-  for (i=0; i<pool->size; i++) {
-    xthread_t *thread = &pool->threads[i];
+  for (int i=0; i<pool->size; i++) {
+    xthread *thread = &pool->threads[i];
     pthread_mutex_lock(&thread->lock);
     thread->stop = 1;
     pthread_mutex_unlock(&thread->lock);
@@ -140,7 +139,7 @@ void xtpool_deinit(void) {
   // wait all quit
   int sleep_cnt = 0;
   while (sleep_cnt < 300) {
-    int all = __sync_fetch_and_add(&pool->total, 0);
+    int all = __sync_fetch_and_add(&pool->avail, 0);
     if (!all) break;
     usleep(100000);
     sleep_cnt++;
@@ -150,24 +149,11 @@ void xtpool_deinit(void) {
   pool = NULL;
 }
 
-#ifdef __XTPOOL_TEST
-
-#include "xunittest.h"
-
-void foo(void *arg1, void *arg2) {
-  printf("foo called\n");
-}
-
-int main(void) {
-  xtpool_init(8);
-  xhandler handler = XHANDLER(foo, NULL, NULL);
-  xtpool_do(handler);
-  xtpool_do(handler);
-  xtpool_do(handler);
-  xtpool_do(handler);
-  sleep(1);
-  xtpool_deinit();
-  return 0;
-}
-
-#endif
+xmodule xtpool_module = {
+  "xtpool",
+  XCORE_MODULE,
+  NULL,
+  _init,
+  _deinit,
+  NULL,
+};

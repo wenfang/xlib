@@ -5,12 +5,14 @@
 #include "xtask.h"
 #include "xsignal.h"
 #include "xserver.h"
+#include "xtpool.h"
 #include "xuser.h"
 
 xmodule *xmodules[] = {
   &xepoll_module,
   &xconn_module,
   &xserver_module,
+  &xtpool_module,
   &xuser_module,
 };
 

@@ -3,7 +3,6 @@
 
 xlist* xlist_new(void) {
   xlist *list = xmalloc(sizeof(xlist));
-  if (list == NULL) return NULL;
   list->head = list->tail = NULL;
   list->len = 0;
   list->free = NULL;
@@ -27,7 +26,6 @@ void xlist_free(xlist *list) {
 xlist* xlist_addNodeHead(xlist *list, void *value) {
   xlistNode *node;
   node = xmalloc(sizeof(xlistNode));
-  if (node == NULL) return NULL; 
   node->value = value;
   
   if (list->len == 0) {
@@ -46,7 +44,6 @@ xlist* xlist_addNodeHead(xlist *list, void *value) {
 xlist* xlist_addNodeTail(xlist *list, void *value) {
   xlistNode *node;
   node = xmalloc(sizeof(xlistNode));
-  if (node == NULL) return NULL; 
   node->value = value;
 
   if (list->len == 0) {
@@ -65,7 +62,6 @@ xlist* xlist_addNodeTail(xlist *list, void *value) {
 xlist* xlist_insertNode(xlist *list, xlistNode *old_node, void *value, int after) {
   xlistNode *node;
   node = xmalloc(sizeof(xlistNode));
-  if (node == NULL) return NULL;
   node->value = value;
 
   if (after) {
@@ -108,7 +104,6 @@ void xlist_delNode(xlist *list, xlistNode *node) {
 
 xlistIter* xlist_newIterator(xlist *list, int direction) {
   xlistIter *iter = xmalloc(sizeof(xlistIter));
-  if (iter == NULL) return NULL;
   if (direction == XLIST_START_HEAD) {
     iter->next = list->head;
   } else {
