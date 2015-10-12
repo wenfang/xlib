@@ -41,9 +41,7 @@ static inline bool xmax_open_files(unsigned file_num) {
   struct rlimit r;
   r.rlim_cur = file_num;
   r.rlim_max = file_num;
-  if (setrlimit(RLIMIT_NOFILE, &r) < 0) {
-    return false;
-  }
+  if (setrlimit(RLIMIT_NOFILE, &r) < 0) return false;
   return true;
 }
 

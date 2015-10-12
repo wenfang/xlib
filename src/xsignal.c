@@ -63,19 +63,11 @@ void xsignal_process(void) {
 	sigprocmask(SIG_SETMASK, &old, NULL);  
 }
 
-static bool _init(void) {
+
+__attribute__((constructor))
+static void _init(void) {
   queue_len = 0;
   memset(queue, 0, sizeof(queue));
   memset(state, 0, sizeof(state));
   sigfillset(&blocked);
-  return true;
 }
-
-xmodule xsignal_module = {
-  "xsignal",
-  XCORE_MODULE,
-  _init,
-  NULL,
-  NULL,
-  NULL,
-};

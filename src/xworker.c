@@ -126,9 +126,9 @@ void xworker_process(void) {
   unsigned timeout;
   while (!_stop) {
     timeout = !xtask_empty() ? 0 : cycle.ticks;
-    xserver_preloop();
+    _xserver_preloop();
     xepoll_process(timeout);
-    xserver_postloop();
+    _xserver_postloop();
     xtask_process();
     xsignal_process();
   }

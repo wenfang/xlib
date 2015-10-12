@@ -16,8 +16,8 @@ typedef struct xserver_s {
   struct list_head  _node;
 } xserver __attribute__((aligned(sizeof(long))));
 
-void xserver_preloop(void);
-void xserver_postloop(void);
+void _xserver_preloop(void);
+void _xserver_postloop(void);
 
 xserver* xserver_register(const char *addr, int port, xhandlerFunc handler, void *arg);
 void xserver_unregister(xserver *server);

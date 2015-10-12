@@ -1,8 +1,6 @@
 #include "xcycle.h"
 #include "xopt.h"
 
-#include <stdlib.h>
-
 xcycle cycle;
 
 bool xcycle_load(void) {

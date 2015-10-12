@@ -6,14 +6,14 @@
 #include <sys/types.h>
 #include <sys/wait.h>
 
-static int xworker_reap;
+static int _reap;
 static void reap_worker(int sig) {
-  xworker_reap = 1;
+  _reap = 1;
 }
 
-static int worker_stop;
+static int _stop;
 static void stop_worker(int sig) {
-  worker_stop = 1;
+  _stop = 1;
 }
 
 static void xmaster_process() {
@@ -32,7 +32,7 @@ static void xmaster_process() {
   for (;;) {
     sigsuspend(&set);
     xsignal_process();
-    if (xworker_reap) {
+    if (_reap) {
       for (;;) {
         int status;
         int pid = waitpid(-1, &status, WNOHANG);
@@ -55,9 +55,9 @@ static void xmaster_process() {
         }
         XLOG_WARNING("worker restart");
       }
-      xworker_reap = 0;
+      _reap = 0;
     }
-    if (worker_stop) {
+    if (_stop) {
       xworker_stop();
       break;
     }

@@ -1,13 +1,11 @@
 #include "xmodule.h"
 #include "xcycle.h"
-#include "xsignal.h"
 #include "xepoll.h"
 #include "xconn.h"
 #include "xtpool.h"
 #include "xuser.h"
 
 xmodule *xmodules[] = {
-  &xsignal_module,
   &xepoll_module,
   &xconn_module,
   &xtpool_module,

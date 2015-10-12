@@ -30,7 +30,7 @@ static void _accept(void *arg, void *nop) {
   xtask_enqueue(&conn->post_rtask);
 }
 
-void xserver_preloop(void) {
+void _xserver_preloop(void) {
   xserver *server = NULL;
   list_for_each_entry(server, &_head, _node) {
     if (!pthread_mutex_trylock(server->_accept_mutex)) {
@@ -46,7 +46,7 @@ void xserver_preloop(void) {
   }
 }
 
-void xserver_postloop(void) {
+void _xserver_postloop(void) {
   xserver *server = NULL;
   list_for_each_entry(server, &_head, _node) {
     if (server->_accept_mutex_hold) pthread_mutex_unlock(server->_accept_mutex);

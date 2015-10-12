@@ -108,7 +108,7 @@ void xtask_process(void) {
 }
 
 __attribute__((constructor))
-static void __xtask_init(void) {
+static void _init(void) {
   timer_head = RB_ROOT;
 }
 
