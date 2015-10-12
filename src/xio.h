@@ -17,9 +17,9 @@ typedef struct xio_s {
   unsigned    _error:1;
 } xio __attribute__((aligned(sizeof(long))));
 
-int xio_read(xio *io, xstring* s);
-int xio_readbytes(xio *io, unsigned len, xstring* s);
-int xio_readuntil(xio *io, const char *delim, xstring* s);
+int xio_read(xio *io, xstring *s);
+int xio_readbytes(xio *io, unsigned len, xstring *s);
+int xio_readuntil(xio *io, const char *delim, xstring *s);
 
 int xio_write(xio *io, xstring s);
 int xio_flush(xio *io);

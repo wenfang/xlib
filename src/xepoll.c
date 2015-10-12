@@ -1,7 +1,6 @@
 #include "xepoll.h"
 #include "xcycle.h"
 #include "xmalloc.h"
-#include "xsock.h"
 #include "xutil.h"
 #include "xlog.h"
 #include <stdlib.h>
@@ -48,7 +47,10 @@ static bool change_epoll(unsigned fd, xepoll *epoll_t, unsigned newmask) {
 
 bool xepoll_enable(unsigned fd, unsigned mask, xtask *task) {
   ASSERT(task);
-  if (fd >= maxfd) return false;
+  if (fd >= maxfd) {
+    XLOG_ERR("fd is too large : %d", fd);
+    return false;
+  }
   xepoll *epoll_t = &epolls[fd];
   if (mask & XEPOLL_READ) epoll_t->_rtask = task;
   if (mask & XEPOLL_WRITE) epoll_t->_wtask = task;
@@ -56,7 +58,10 @@ bool xepoll_enable(unsigned fd, unsigned mask, xtask *task) {
 }
 
 bool xepoll_disable(unsigned fd, unsigned mask) {
-  if (fd >= maxfd) return false;
+  if (fd >= maxfd) {
+    XLOG_ERR("fd is too large : %d", fd);
+    return false;
+  }
   xepoll *epoll_t = &epolls[fd];
   if (mask & XEPOLL_READ) epoll_t->_rtask = NULL;
   if (mask & XEPOLL_WRITE) epoll_t->_wtask = NULL;
@@ -64,11 +69,7 @@ bool xepoll_disable(unsigned fd, unsigned mask) {
 }
 
 void xepoll_process(int timeout) {
-  struct epoll_event* e;
-  xepoll *epoll_t;
-  int i, events_n;
- 
-  events_n = epoll_wait(epfd, epoll_events, maxfd, timeout);
+  int events_n = epoll_wait(epfd, epoll_events, maxfd, timeout);
   if (unlikely(events_n < 0)) {
     if (errno == EINTR) return;
     XLOG_ERR("epoll_wait error: %s", strerror(errno));
@@ -76,9 +77,9 @@ void xepoll_process(int timeout) {
   }
   if (events_n == 0) return;
   // check events
-  for (i=0; i<events_n; i++) {
-    e = &epoll_events[i];
-    epoll_t = &epolls[e->data.fd];
+  for (int i=0; i<events_n; i++) {
+    struct epoll_event *e = &epoll_events[i];
+    xepoll *epoll_t = &epolls[e->data.fd];
     if ((e->events & EPOLLIN) && (epoll_t->_mask & XEPOLL_READ)) {
       xtask_enqueue(epoll_t->_rtask);
     }

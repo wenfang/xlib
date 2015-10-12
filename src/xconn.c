@@ -44,8 +44,7 @@ end_out:
 }
 
 bool xconn_connect(xconn *conn, const char *addr, const char *port) {
-  ASSERT(conn && conn->_rtype == XCONN_READNONE && conn->_wtype == XCONN_WRITENONE && 
-      addr && port);
+  ASSERT(conn && conn->_rtype == XCONN_READNONE && conn->_wtype == XCONN_WRITENONE && addr && port);
   // gen address hints
   struct addrinfo hints;
   memset(&hints, 0, sizeof(hints));
@@ -53,9 +52,15 @@ bool xconn_connect(xconn *conn, const char *addr, const char *port) {
   hints.ai_socktype = SOCK_STREAM;
   // get address info into servinfo
   struct addrinfo *servinfo;
-  if (getaddrinfo(addr, port, &hints, &servinfo)) return false;
+  if (getaddrinfo(addr, port, &hints, &servinfo)) {
+    XLOG_ERR("getaddrinfo error");
+    return false;
+  }
   // try the first address
-  if (!servinfo) return false;
+  if (!servinfo) {
+    XLOG_ERR("servinfo is null");
+    return false;
+  }
   if (connect(conn->_fd, servinfo->ai_addr, servinfo->ai_addrlen) == -1) {
     if (errno == EINPROGRESS) {
       // (async):
@@ -160,7 +165,7 @@ static void _readasync(xconn *conn, unsigned rtype) {
 bool xconn_readuntil(xconn *conn, const char *delim) {
   ASSERT(conn && conn->_rtype == XCONN_READNONE && delim);
   if (conn->flags & (XCONN_CLOSED | XCONN_ERROR)) return false;
-  // (sync):
+  // (sync): fast read fast fail
   if (_readsync(conn)) return true;
   // check Buffer for delim
   int pos = xstring_search(conn->_rbuf, delim);
@@ -199,7 +204,7 @@ bool xconn_read(xconn *conn) {
   ASSERT(conn && conn->_rtype == XCONN_READNONE);
   if (conn->flags & (XCONN_CLOSED | XCONN_ERROR)) return false;
   // (sync): fast out
-  if (!_readsync(conn)) return true;
+  if (_readsync(conn)) return true;
   // check buffer
   if (xstring_len(conn->_rbuf) > 0) {
     xstring_catxs(conn->buf, conn->_rbuf);
@@ -212,7 +217,7 @@ bool xconn_read(xconn *conn) {
   return true;
 }
 
-static void write_normal(void *arg, void *nop) {
+static void _write_normal(void *arg, void *nop) {
   xconn *conn = arg;
   // check timeout
   if (conn->_wtimeout && XTASK_IS_TIMEOUT(conn->_wtask)) {
@@ -262,7 +267,7 @@ bool xconn_flush(xconn *conn) {
     return true;
   }
   // async write
-  conn->_wtask.handler = XHANDLER(write_normal, conn, NULL);
+  conn->_wtask.handler = XHANDLER(_write_normal, conn, NULL);
   conn->flags   &= ~XCONN_WTIMEOUT;
   conn->_wtype  = XCONN_WRITE;
   xepoll_enable(conn->_fd, XEPOLL_WRITE, &conn->_wtask);
@@ -329,8 +334,7 @@ static bool _init(void) {
 }
 
 static void _deinit(void) {
-  int i;
-  for(i=0; i<=usedfd; i++) {
+  for(int i=0; i<=usedfd; i++) {
     xconn *conn = &conns[i];
     xstring_free(conn->buf);
     xstring_free(conn->_rbuf);

@@ -29,7 +29,7 @@ typedef struct xdict {
 } xdict;
 
 typedef struct xdictIterator {
-  xdict *ht;
+  xdict *d;
   int index;
   xdictEntry *entry, *nextEntry;
 } xdictIterator;
@@ -70,11 +70,17 @@ typedef struct xdictIterator {
 #define xdictSlots(ht) ((ht)->size)
 #define xdictSize(ht) ((ht)->used)
 
-
+unsigned int xdict_genHashFunction(const unsigned char *buf, int len);
 xdict* xdict_new(xdictType *type, void *privDataPtr);
-void xdict_free(xdict *dict);
+void xdict_free(xdict *d);
 
-int xdict_add(xdict *d, void *key, void *value);
+int xdict_add(xdict *d, void *key, void *val);
+int xdict_set(xdict *d, void *key, void *val);
 int xdict_del(xdict *d, void *key);
+
+xdictEntry* xdict_find(xdict *d, const void *key);
+xdictIterator* xdict_newIterator(xdict *d);
+xdictEntry* xdict_next(xdictIterator *iter);
+void xdict_freeIterator(xdictIterator *iter);
 
 #endif

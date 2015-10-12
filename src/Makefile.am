@@ -26,7 +26,7 @@ xlist_SOURCES = xlist.c xlist.h $(XMALLOC)
 xlist_CPPFLAGS = -D__XLIST_TEST -Wall
 
 xdict_SOURCES = xdict.c xdict.h $(XMALLOC)
-xdict_CPPFLAGS = -D__XDICT_TEST -Wall
+xdict_CPPFLAGS = -D__XDICT_TEST -Wall -std=gnu99
 
 spex_SOURCES = xmaster.c xmaster.h xserver.c xserver.h xutil.c xutil.h xshm.c xshm.h xworker.c xworker.h xsignal.c xsignal.h xuser.c xuser.h cJSON.c cJSON.h xtpool.c xtpool.h $(XCONN)
 spex_CPPFLAGS = -Wall -std=gnu99
