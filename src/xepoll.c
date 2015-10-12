@@ -111,8 +111,8 @@ static void _deinit(void) {
 xmodule xepoll_module = {
   "xepoll",
   XCORE_MODULE,
-  NULL,
   _init,
-  _deinit,
   NULL,
+  NULL,
+  _deinit,
 };

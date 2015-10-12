@@ -98,6 +98,7 @@ static void _control_handler(void *nop1, void *nop2) {
     return;
   }
   if (res == 0) { // master exit, worker exit
+    XLOG_ERR("master exit, worker exit");
     _stop = true;
     return;
   }

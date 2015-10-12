@@ -22,6 +22,4 @@ void xserver_postloop(void);
 xserver* xserver_register(const char *addr, int port, xhandlerFunc handler, void *arg);
 void xserver_unregister(xserver *server);
 
-extern xmodule xserver_module;
-
 #endif

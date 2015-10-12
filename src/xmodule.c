@@ -3,7 +3,6 @@
 #include "xsignal.h"
 #include "xepoll.h"
 #include "xconn.h"
-#include "xserver.h"
 #include "xtpool.h"
 #include "xuser.h"
 
@@ -11,7 +10,6 @@ xmodule *xmodules[] = {
   &xsignal_module,
   &xepoll_module,
   &xconn_module,
-  &xserver_module,
   &xtpool_module,
   &xuser_module,
 };

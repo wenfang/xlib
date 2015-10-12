@@ -90,21 +90,3 @@ void xserver_unregister(xserver *server) {
   list_del(&server->_node);
   xfree(server);
 }
-
-static void _deinit(void) {
-  xserver *server, *tmp;
-  list_for_each_entry_safe(server, tmp, &_head, _node) {
-    if (server->_accept_mutex) xshm_mutex_free(server->_accept_mutex);
-    xsock_close(server->_sfd);
-    xfree(server);
-  }
-}
-
-xmodule xserver_module = {
-  "xserver",
-  XCORE_MODULE,
-  NULL,
-  NULL,
-  _deinit,
-  NULL,
-};

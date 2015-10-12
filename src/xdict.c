@@ -170,6 +170,10 @@ void xdict_freeIterator(xdictIterator *iter) {
 }
 
 unsigned int xdict_genHashFunction(const unsigned char *buf, int len) {
+  unsigned int hash = 5381;
+  
+  while (len--) hash = ((hash << 5) + hash) + (*buf++);
+  return hash;
 }
 
 xdict* xdict_new(xdictType *type, void *privDataPtr) {

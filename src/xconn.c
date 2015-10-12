@@ -346,8 +346,8 @@ static void _deinit(void) {
 xmodule xconn_module = {
   "xconn",
   XCORE_MODULE,
-  NULL,
   _init,
-  _deinit,
   NULL,
+  NULL,
+  _deinit,
 };
