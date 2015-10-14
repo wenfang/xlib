@@ -12,17 +12,35 @@ static void _conn_exit(void *arg1, void *arg2) {
   xconn_free(conn);
 }
 
+/*
 static void _read_command(void *arg1, void *arg2) {
   xconn *conn = arg1;
   xconn_writes(conn, "HTTP/1.1 200 OK\r\n");
   printf("%ld\n", http_parser_version());
   xconn_flush(conn);
 }
+*/
+
+static void _main_done(void *arg1, void *arg2) {
+  xconn *conn = arg1;
+  xredis *rds = arg2;
+  xredis_free(rds);
+  xconn_free(conn);
+}
+
+static void _main_call(void *arg1, void *arg2) {
+  xconn *conn = arg1;
+  xredis *rds = xredis_new("127.0.0.1", "6379");
+  rds->task.handler = XHANDLER(_main_done, conn, rds);
+  xstring *cmd = xmalloc(sizeof(xstring)*2);
+  cmd[0] = xstring_new("incr");
+  cmd[1] = xstring_new("mytestabc");
+  xredis_do(rds, cmd, 2);
+}
 
 static void mainHandler(void *arg1, void *arg2) {
   xconn *conn = arg1;
-  conn->post_rtask.handler = XHANDLER(_read_command, conn, NULL);
-  conn->post_wtask.handler = XHANDLER(_conn_exit, conn, NULL);
+  conn->post_rtask.handler = XHANDLER(_main_call, conn, NULL);
   xconn_readuntil(conn, "\r\n\r\n");
 }
 

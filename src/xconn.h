@@ -15,6 +15,12 @@
 #define XCONN_CLOSED    4
 #define XCONN_ERROR     8
 
+#define XCONN_IS_CTIMEOUT(conn) (conn->flags & XCONN_CTIMEOUT)
+#define XCONN_IS_RTIMEOUT(conn) (conn->flags & XCONN_RTIMEOUT)
+#define XCONN_IS_WTIMEOUT(conn) (conn->flags & XCONN_WTIMEOUT)
+#define XCONN_IS_CLOSED(conn) (conn->flags & XCONN_CLOSED)
+#define XCONN_IS_ERROR(conn) (conn->flags & XCONN_ERROR)
+
 typedef struct {
   xstring   buf;
   xtask     post_rtask;

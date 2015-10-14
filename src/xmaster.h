@@ -10,5 +10,6 @@
 #include "xsignal.h"
 #include "xserver.h"
 #include "xstring.h"
+#include "xredis.h"
 
 #endif
