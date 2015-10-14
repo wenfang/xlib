@@ -68,6 +68,7 @@ xserver* xserver_register(const char *addr, int port, xhandlerFunc handler, void
   server->_arg          = arg;
   xtask_init(&server->_listen_task);
   server->_listen_task.handler = XHANDLER(_accept, server, NULL);
+  server->_listen_task.flags |= XTASK_FAST;
   server->_accept_mutex = xshm_mutex_new();
   if (!server->_accept_mutex) {
     XLOG_ERR("xshm_mutex_new error");
