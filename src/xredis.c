@@ -19,6 +19,7 @@ static void _send(xredis *rds) {
 }
 
 #define PARSE_START 1
+#define PARSE_BULK  2
 
 static int _parse_start(xredis *rds) {
   if (*rds->_conn->buf == ':' ||
@@ -34,7 +35,15 @@ static int _parse_start(xredis *rds) {
       rsp->type = XREDIS_INT;
     };
     xlist_addNodeTail(rds->rspList, rsp);
+    xstring_clean(rds->_conn->buf);
     return 1;
+  }
+  if (*rds->_conn->buf == '$') {
+    xredisRsp *rsp = xredisRsp_new(1);
+    rsp->type = XREDIS_BULK;
+    xstring_clean(rds->_conn->buf);
+    rds->_phash = PARSE_BULK;
+    return 0;
   }
   return 0;
 }
@@ -43,6 +52,8 @@ static int _parse_data(xredis *rds) {
   switch (rds->_phase) {
   case PARSE_START:
     return _parse_start(rds);
+  case PARSE_BULK:
+    
   }
   return 0;
 }
