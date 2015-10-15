@@ -38,10 +38,10 @@ static void _main_call(void *arg1, void *arg2) {
   xconn *conn = arg1;
   xredis *rds = xredis_new("127.0.0.1", "6379");
   rds->task.handler = XHANDLER(_main_done, conn, rds);
-  xstring *cmd = xmalloc(sizeof(xstring)*1);
-  cmd[0] = xstring_new("ping");
-  // cmd[1] = xstring_new("mytestabc");
-  xredis_do(rds, cmd, 1);
+  xstring *cmd = xmalloc(sizeof(xstring)*2);
+  cmd[0] = xstring_new("get");
+  cmd[1] = xstring_new("mytestabc");
+  xredis_do(rds, cmd, 2);
 }
 
 static void mainHandler(void *arg1, void *arg2) {

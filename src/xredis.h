@@ -16,7 +16,6 @@ typedef struct xredis_s {
   xconn         *_conn;
   unsigned int  _timeout;
   int           _status;
-  int           _phase;
 } xredis;
 
 // for xredisRsp type

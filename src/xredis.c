@@ -18,64 +18,69 @@ static void _send(xredis *rds) {
   xconn_flush(rds->_conn);
 }
 
-#define PARSE_START 1
-#define PARSE_BULK  2
-
-static int _parse_start(xredis *rds) {
-  if (*rds->_conn->buf == ':' ||
-      *rds->_conn->buf == '+' ||
-      *rds->_conn->buf == '-') {
-    xredisRsp *rsp = xredisRsp_new(1);
-    rsp->data[0] = xstring_cpylen(rsp->data[0], rds->_conn->buf+1, xstring_len(rds->_conn->buf)-3);
-    if (*rds->_conn->buf == '+') {
-      rsp->type = XREDIS_STR;
-    } else if (*rds->_conn->buf == '-') {
-      rsp->type = XREDIS_ERR;
-    } else if (*rds->_conn->buf == ':') {
-      rsp->type = XREDIS_INT;
-    };
-    xlist_addNodeTail(rds->rspList, rsp);
-    xstring_clean(rds->_conn->buf);
-    return 1;
-  }
-  if (*rds->_conn->buf == '$') {
-    xredisRsp *rsp = xredisRsp_new(1);
-    rsp->type = XREDIS_BULK;
-    xstring_clean(rds->_conn->buf);
-    rds->_phash = PARSE_BULK;
-    return 0;
-  }
-  return 0;
-}
-
 static int _parse_data(xredis *rds) {
-  switch (rds->_phase) {
-  case PARSE_START:
-    return _parse_start(rds);
-  case PARSE_BULK:
-    
+  int ret = 0;
+  for (;;) {
+    if (xstring_len(rds->_conn->buf) == 0) break;
+    if (*rds->_conn->buf == ':' ||
+        *rds->_conn->buf == '+' ||
+        *rds->_conn->buf == '-') {
+      // find \r\n in buffer
+      int pos = xstring_search(rds->_conn->buf, "\r\n");
+      if (pos < 0) break;
+      // \r\n is found 
+      xredisRsp *rsp = xredisRsp_new(1);
+      rsp->data[0] = xstring_cpylen(rsp->data[0], rds->_conn->buf+1, pos-1);
+      if (*rds->_conn->buf == '+') {
+        rsp->type = XREDIS_STR;
+      } else if (*rds->_conn->buf == '-') {
+        rsp->type = XREDIS_ERR;
+      } else if (*rds->_conn->buf == ':') {
+        rsp->type = XREDIS_INT;
+      };
+      xlist_addNodeTail(rds->rspList, rsp);
+      xstring_range(rds->_conn->buf, pos+2, -1);
+      ret = 1;
+      continue;
+    }
+    if (*rds->_conn->buf == '$') {
+      int dataStart = xstring_search(rds->_conn->buf, "\r\n");
+      if (dataStart < 0) break;
+      dataStart += 2;
+      int dataLen = xstring_search(rds->_conn->buf+dataStart, "\r\n");
+      if (dataLen < 0) break;
+      dataLen += 2;
+      xredisRsp *rsp = xredisRsp_new(1);
+      rsp->data[0] = xstring_cpylen(rsp->data[0], rds->_conn->buf+dataStart, dataLen);
+      rsp->type = XREDIS_BULK;
+      xlist_addNodeTail(rds->rspList, rsp);
+      xstring_range(rds->_conn->buf, dataStart+dataLen+2, -1);
+      ret = 1;
+      continue;
+    }
   }
-  return 0;
+  return ret;
 }
 
 // recv data callback
 static void _recv_cb(void *arg1, void *arg2) {
   xredis *rds = arg1;
   if (_parse_data(rds)) xtask_enqueue(&rds->task);
-  xconn_readuntil(rds->_conn, "\r\n");
+  xconn_read(rds->_conn);
 }
 
 // conn callback
 static void _conn_cb(void *arg1, void *arg2) {
   xredis *rds = arg1;
   if (XCONN_IS_ERROR(rds->_conn)) {
+    // TODO: connnect error
     printf("connect error\n");
     return;
   }
   rds->_status = XREDIS_CONN;
   rds->_conn->post_rtask.handler = XHANDLER(_recv_cb, rds, NULL);
   if (rds->reqCnt != 0) _send(rds);
-  xconn_readuntil(rds->_conn, "\r\n");
+  xconn_read(rds->_conn);
 }
 
 static void _conn(xredis *rds) {
@@ -105,7 +110,6 @@ xredis* xredis_new(const char *addr, const char *port) {
   rds->rspList = xlist_new();
   rds->rspList->free = xredisRsp_free; 
   xtask_init(&rds->task);
-  rds->_phase = PARSE_START;
   return rds;
 }
 
