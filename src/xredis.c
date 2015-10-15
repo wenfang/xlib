@@ -18,15 +18,6 @@ static void _send(xredis *rds) {
   xconn_flush(rds->_conn);
 }
 
-static bool _bulk_ok(xstring s, unsigned size) {
-  int pos = xstring_search(s, "\r\n");
-  if (pos < 0) return false;
-  
-  int bulkLen = atoi(s+1);
-  if (size-pos-4 < bulkLen) return false;
-  return true;
-}
-
 static int _parse_data(xredis *rds) {
   int ret = 0;
   for (;;) {
@@ -53,20 +44,28 @@ static int _parse_data(xredis *rds) {
       continue;
     }
     if (*rds->_conn->buf == '$') {
-      if (!_bulk_ok(rds->_conn->buf, xstring_len(rds->_conn->buf))) break;
       int pos = xstring_search(rds->_conn->buf, "\r\n");
       if (pos < 0) break;
       int bulkLen = atoi(rds->_conn->buf+1);
+      if (xstring_len(rds->_conn->buf)-pos-4 < bulkLen) break;
 
-      xredisMsg *rsp = xredisMsg_new(1);
-      rsp->data[0] = xstring_cpylen(rsp->data[0], rds->_conn->buf+pos+2, bulkLen);
-      rsp->type = XREDIS_BULK;
-      xlist_addNodeTail(rds->rspList, rsp);
-      xstring_range(rds->_conn->buf, pos+4+bulkLen, -1);
-      ret = 1;
-      continue;
+      if (rds->rspBuf == NULL) { 
+        xredisMsg *rsp = xredisMsg_new(1);
+        rsp->data[0] = xstring_cpylen(rsp->data[0], rds->_conn->buf+pos+2, bulkLen);
+        rsp->type = XREDIS_BULK;
+        xlist_addNodeTail(rds->rspList, rsp);
+        xstring_range(rds->_conn->buf, pos+4+bulkLen, -1);
+        ret = 1;
+        continue;
+      } else {
+      }
     }
     if (*rds->_conn->buf == '*') {
+      int pos = xstring_search(rds->_conn->buf, "\r\n");
+      if (pos < 0) break;
+      int bulkCnt = atoi(rds->_conn->buf+1);
+      rds->rspBuf = xredisMsg_new(bulkCnt);
+      xstring_range(rds->_conn->buf, pos+2, -1);
       continue;
     }
   }
@@ -139,13 +138,14 @@ xredisMsg* xredisMsg_new(unsigned size) {
   for (int i=0; i<size; i++) {
     rsp->data[i] = xstring_empty();
   }
-  rsp->cnt = size;
+  rsp->len  = 0;
+  rsp->size = size;
   return rsp;
 }
 
 void xredisMsg_free(void *arg) {
   xredisMsg *rsp = arg;
-  for (int i=0; i<rsp->cnt; i++) {
+  for (int i=0; i<rsp->size; i++) {
     xstring_free(rsp->data[i]);
   }
   xfree(rsp->data);

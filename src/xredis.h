@@ -5,19 +5,6 @@
 #include "xtask.h"
 #include "xlist.h"
 
-typedef struct xredis_s {
-  xstring     *req;
-  int         reqCnt;
-  xlist       *rspList;
-  xtask       task;
-
-  const char    *_addr;
-  const char    *_port;
-  xconn         *_conn;
-  unsigned int  _timeout;
-  int           _status;
-} xredis;
-
 // for xredisMsg type
 #define XREDIS_STR    1
 #define XREDIS_ERR    2
@@ -27,9 +14,24 @@ typedef struct xredis_s {
 
 typedef struct xredisMsg_s {
   xstring   *data;
-  unsigned  cnt;
+  unsigned  len;
+  unsigned  size;
   unsigned  type;
 } xredisMsg;
+
+typedef struct xredis_s {
+  xstring     *req;
+  int         reqCnt;
+  xlist       *rspList;
+  xredisMsg   *rspBuf;
+  xtask       task;
+
+  const char    *_addr;
+  const char    *_port;
+  xconn         *_conn;
+  unsigned int  _timeout;
+  int           _status;
+} xredis;
 
 void xredis_do(xredis *rds, xstring *cmd, int cnt);
 
