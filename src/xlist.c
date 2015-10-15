@@ -100,6 +100,9 @@ void xlist_delNode(xlist *list, xlistNode *node) {
   } else {
     list->tail = node->prev;
   }
+  if (list->free) list->free(node->value);
+  xfree(node);
+  list->len--;
 }
 
 xlistIter* xlist_newIterator(xlist *list, int direction) {

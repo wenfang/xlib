@@ -247,7 +247,8 @@ end_out:
 }
 
 bool xconn_flush(xconn *conn) {
-  ASSERT(conn && conn->_wtype == XCONN_WRITENONE);
+  ASSERT(conn);
+  if (conn->_wtype == XCONN_WRITE) return true;
   if (conn->flags & (XCONN_CLOSED | XCONN_ERROR)) return false;
   // sync write
   int res = write(conn->_fd, conn->_wbuf, xstring_len(conn->_wbuf));

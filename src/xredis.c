@@ -9,11 +9,19 @@
 #define XREDIS_ERROR    5
 
 static void _send(xredis *rds) {
-  for (int i=0; i<rds->reqCnt; i++) {
-    if (i != 0) xconn_writes(rds->_conn, " ");
-    xconn_write(rds->_conn, rds->req[i], xstring_len(rds->req[i]));
+  xstring buf = xstring_empty();
+  while (xlistLength(rds->reqList) > 0) {
+    xlistNode *node = xlistFirst(rds->reqList);
+    xredisMsg *req = xlistNodeValue(node);
+    buf = xstring_catprintf(buf, "*%d\r\n", req->size);
+    for (int i=0; i<req->size; i++) {
+      buf = xstring_catprintf(buf, "$%d\r\n%s\r\n", xstring_len(req->data[i]), req->data[i]);
+    }
+    xconn_write(rds->_conn, buf, xstring_len(buf));
+    xstring_clean(buf);
+    xlist_delNode(rds->reqList, node);
   }
-  xconn_writes(rds->_conn, "\r\n");
+  xstring_free(buf);
   // flush command to redis server
   xconn_flush(rds->_conn);
 }
@@ -52,12 +60,24 @@ static int _parse_data(xredis *rds) {
       if (rds->rspBuf == NULL) { 
         xredisMsg *rsp = xredisMsg_new(1);
         rsp->data[0] = xstring_cpylen(rsp->data[0], rds->_conn->buf+pos+2, bulkLen);
+        rsp->len = 1;
         rsp->type = XREDIS_BULK;
         xlist_addNodeTail(rds->rspList, rsp);
-        xstring_range(rds->_conn->buf, pos+4+bulkLen, -1);
         ret = 1;
+        xstring_range(rds->_conn->buf, pos+4+bulkLen, -1);
         continue;
       } else {
+        xredisMsg *rsp = rds->rspBuf;
+        rsp->data[rsp->len] = xstring_cpylen(rsp->data[rsp->len], rds->_conn->buf+pos+2, bulkLen);
+        rsp->len++;
+        if (rsp->len == rsp->size) {
+          rsp->type = XREDIS_ARRAY;
+          xlist_addNodeTail(rds->rspList, rsp);
+          ret = 1;
+          rds->rspBuf = NULL;
+        }
+        xstring_range(rds->_conn->buf, pos+4+bulkLen, -1);
+        continue;
       }
     }
     if (*rds->_conn->buf == '*') {
@@ -89,7 +109,7 @@ static void _conn_cb(void *arg1, void *arg2) {
   }
   rds->_status = XREDIS_CONN;
   rds->_conn->post_rtask.handler = XHANDLER(_recv_cb, rds, NULL);
-  if (rds->reqCnt != 0) _send(rds);
+  if (xlistLength(rds->reqList) > 0) _send(rds);
   xconn_read(rds->_conn);
 }
 
@@ -102,10 +122,9 @@ static void _conn(xredis *rds) {
   xconn_connect(rds->_conn, rds->_addr, rds->_port);
 }
 
-void xredis_do(xredis *rds, xstring *req, int reqCnt) {
+void xredis_do(xredis *rds, xredisMsg *req) {
+  xlist_addNodeTail(rds->reqList, req);
   if (rds->_status == XREDIS_FREE) {
-    rds->req = req;
-    rds->reqCnt = reqCnt;
     _conn(rds);
     return;
   }
@@ -114,40 +133,43 @@ void xredis_do(xredis *rds, xstring *req, int reqCnt) {
 
 xredis* xredis_new(const char *addr, const char *port) {
   xredis *rds = xcalloc(sizeof(xredis));
-  rds->_addr = addr;
-  rds->_port = port;
-  rds->_status = XREDIS_FREE;
+  rds->reqList = xlist_new();
+  rds->reqList->free = xredisMsg_free;
   rds->rspList = xlist_new();
   rds->rspList->free = xredisMsg_free; 
   xtask_init(&rds->task);
+
+  rds->_addr = addr;
+  rds->_port = port;
+  rds->_status = XREDIS_FREE;
   return rds;
 }
 
-void xredis_free(xredis *rds) {
-  if (rds->_status != XREDIS_FREE) {
-    xconn_free(rds->_conn);
-  }
-  xstrings_free(rds->req, rds->reqCnt);
+void xredis_free(void *arg) {
+  if (arg == NULL) return;
+
+  xredis *rds = arg;
+  xlist_free(rds->reqList);
   xlist_free(rds->rspList);
+  xredisMsg_free(rds->rspBuf);
+  if (rds->_status != XREDIS_FREE) xconn_free(rds->_conn);
   xfree(rds);
 }
 
 xredisMsg* xredisMsg_new(unsigned size) {
   xredisMsg *rsp = xmalloc(sizeof(xredisMsg));
   rsp->data = xmalloc(sizeof(xstring)*size);
-  for (int i=0; i<size; i++) {
-    rsp->data[i] = xstring_empty();
-  }
+  for (int i=0; i<size; i++) rsp->data[i] = xstring_empty();
   rsp->len  = 0;
   rsp->size = size;
   return rsp;
 }
 
 void xredisMsg_free(void *arg) {
+  if (arg == NULL) return;
+
   xredisMsg *rsp = arg;
-  for (int i=0; i<rsp->size; i++) {
-    xstring_free(rsp->data[i]);
-  }
+  for (int i=0; i<rsp->size; i++) xstring_free(rsp->data[i]);
   xfree(rsp->data);
   xfree(rsp);
 }

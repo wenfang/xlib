@@ -20,8 +20,7 @@ typedef struct xredisMsg_s {
 } xredisMsg;
 
 typedef struct xredis_s {
-  xstring     *req;
-  int         reqCnt;
+  xlist       *reqList;
   xlist       *rspList;
   xredisMsg   *rspBuf;
   xtask       task;
@@ -33,10 +32,10 @@ typedef struct xredis_s {
   int           _status;
 } xredis;
 
-void xredis_do(xredis *rds, xstring *cmd, int cnt);
+void xredis_do(xredis *rds, xredisMsg *req);
 
 xredis* xredis_new(const char *addr, const char *port);
-void xredis_free(xredis *rds);
+void xredis_free(void *arg);
 
 xredisMsg* xredisMsg_new(unsigned size);
 void xredisMsg_free(void *arg);

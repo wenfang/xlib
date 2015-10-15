@@ -80,12 +80,16 @@ void xepoll_process(int timeout) {
   for (int i=0; i<events_n; i++) {
     struct epoll_event *e = &epoll_events[i];
     xepoll *epoll_t = &epolls[e->data.fd];
+    int flag = 0;
     if ((e->events & EPOLLIN) && (epoll_t->_mask & XEPOLL_READ)) {
+      flag = 1;
       xtask_enqueue(epoll_t->_rtask);
     }
     if ((e->events & EPOLLOUT) && (epoll_t->_mask & XEPOLL_WRITE)) {
+      flag = 1;
       xtask_enqueue(epoll_t->_wtask);
     }
+    if (flag == 0) XLOG_ERR("%d:%d %d", events_n, i, e->events);
   }
 }
 

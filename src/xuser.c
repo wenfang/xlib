@@ -24,24 +24,36 @@ static void _read_command(void *arg1, void *arg2) {
 static void _main_done(void *arg1, void *arg2) {
   xconn *conn = arg1;
   xredis *rds = arg2;
-  xconn_writes(conn, "HTTP/1.1 200 OK\r\n\r\n");
-  if (xlistLength(rds->rspList) > 0) {
+  xconn_writes(conn, "HTTP/1.0 200 OK\r\nConnection: close\r\n");
+
+  xstring buf = xstring_empty();
+  while (xlistLength(rds->rspList) > 0) {
     xlistNode *node = xlistFirst(rds->rspList);
     xredisMsg *rsp = xlistNodeValue(node);
-    xconn_writes(conn, rsp->data[0]);
+    for(int i=0; i<rsp->size; i++) {
+      buf = xstring_catprintf(buf, "%s\r\n", rsp->data[i]);
+    }
+    xlist_delNode(rds->rspList, node);
   }
-  xconn_flush(conn);
+
+  xstring res = xstring_empty();
+  res = xstring_catprintf(res, "Content-Length: %d\r\n\r\n%s", xstring_len(buf), buf);
+  xconn_writes(conn, res);
+  xstring_free(buf);
+  xstring_free(res);
+
   xredis_free(rds);
+  xconn_flush(conn);
 }
 
 static void _main_call(void *arg1, void *arg2) {
   xconn *conn = arg1;
   xredis *rds = xredis_new("127.0.0.1", "6379");
   rds->task.handler = XHANDLER(_main_done, conn, rds);
-  xstring *cmd = xmalloc(sizeof(xstring)*1);
-  cmd[0] = xstring_new("info");
-  //cmd[1] = xstring_new("mytestabc");
-  xredis_do(rds, cmd, 1);
+  xredisMsg *msg = xredisMsg_new(2);
+  msg->data[0] = xstring_cpy(msg->data[0], "keys");
+  msg->data[1] = xstring_cpy(msg->data[1], "*");
+  xredis_do(rds, msg);
 }
 
 static void mainHandler(void *arg1, void *arg2) {
