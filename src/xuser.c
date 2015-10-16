@@ -6,6 +6,7 @@
 static xserver *server1;
 static xserver *server2;
 static xserver *server3;
+static xserver *server4;
 
 static void _conn_exit(void *arg1, void *arg2) {
   xconn *conn = arg1;
@@ -107,6 +108,11 @@ static void httpHandler(void *arg1, void *arg2) {
   xconn_readuntil(httpconn->conn, "\r\n\r\n");
 }
 
+static void mysqlHandler(void *arg1, void *arg2) {
+  xmysql *mysql = xmysql_new("127.0.0.1", "3306");
+  xmysql_query(mysql);  
+}
+
 static bool _init(void) {
   server1 = xserver_register("127.0.0.1", 7879, mainHandler, NULL);
   if (server1 == NULL) {
@@ -123,6 +129,11 @@ static bool _init(void) {
     XLOG_ERR("xserver_register error");
     return false;
   }
+  server4 = xserver_register("127.0.0.1", 8000, mysqlHandler, NULL);
+  if (server4 == NULL) {
+    XLOG_ERR("xserver_register error");
+    return false;
+  }
   return true;
 }
 
@@ -130,6 +141,7 @@ static void _deinit(void) {
   xserver_unregister(server1); 
   xserver_unregister(server2);
   xserver_unregister(server3);
+  xserver_unregister(server4);
 }
 
 xmodule xuser_module = {

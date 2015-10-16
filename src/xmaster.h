@@ -11,5 +11,6 @@
 #include "xserver.h"
 #include "xstring.h"
 #include "xredis.h"
+#include "xmysql.h"
 
 #endif
