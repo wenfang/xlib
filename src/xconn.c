@@ -171,7 +171,7 @@ bool xconn_readuntil(xconn *conn, const char *delim) {
   int pos = xstring_search(conn->_rbuf, delim);
   if (pos != -1) {
     unsigned len = pos + strlen(delim); 
-    xstring_catlen(conn->buf, conn->_rbuf, len);
+    conn->buf = xstring_catlen(conn->buf, conn->_rbuf, len);
     xstring_range(conn->_rbuf, len, -1);
     xtask_enqueue(&conn->post_rtask);
     return true;
@@ -189,7 +189,7 @@ bool xconn_readbytes(xconn *conn, unsigned len) {
   if (_readsync(conn)) return true;
   // check buffer
   if (len <= xstring_len(conn->_rbuf)) {
-    xstring_catxs(conn->buf, conn->_rbuf);
+    conn->buf = xstring_catxs(conn->buf, conn->_rbuf);
     xstring_range(conn->_rbuf, len, -1);
     xtask_enqueue(&conn->post_rtask);
     return true;
@@ -207,7 +207,7 @@ bool xconn_read(xconn *conn) {
   if (_readsync(conn)) return true;
   // check buffer
   if (xstring_len(conn->_rbuf) > 0) {
-    xstring_catxs(conn->buf, conn->_rbuf);
+    conn->buf = xstring_catxs(conn->buf, conn->_rbuf);
     xstring_clean(conn->_rbuf);
     xtask_enqueue(&conn->post_rtask);
     return true;
