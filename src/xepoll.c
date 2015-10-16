@@ -89,7 +89,7 @@ void xepoll_process(int timeout) {
       flag = 1;
       xtask_enqueue(epoll_t->_wtask);
     }
-    if (flag == 0) XLOG_ERR("%d:%d %d", events_n, i, e->events);
+    if (flag == 0) XLOG_ERR("%d:%d %d, %d", events_n, i, e->data.fd, e->events);
   }
 }
 

@@ -39,8 +39,8 @@ static void _main_done(void *arg1, void *arg2) {
   xstring res = xstring_empty();
   res = xstring_catprintf(res, "Content-Length: %d\r\n\r\n%s", xstring_len(buf), buf);
   xconn_writes(conn, res);
-  xstring_free(buf);
   xstring_free(res);
+  xstring_free(buf);
 
   xredis_free(rds);
   xconn_flush(conn);

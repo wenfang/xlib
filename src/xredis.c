@@ -88,6 +88,7 @@ static int _parse_data(xredis *rds) {
       xstring_range(rds->_conn->buf, pos+2, -1);
       continue;
     }
+    XLOG_ERR("redis response error: %s", rds->_conn->buf);
   }
   return ret;
 }
@@ -152,7 +153,9 @@ void xredis_free(void *arg) {
   xlist_free(rds->reqList);
   xlist_free(rds->rspList);
   xredisMsg_free(rds->rspBuf);
-  if (rds->_status != XREDIS_FREE) xconn_free(rds->_conn);
+  if (rds->_status != XREDIS_FREE) {
+    xconn_free(rds->_conn);
+  }
   xfree(rds);
 }
 

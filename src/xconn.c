@@ -308,6 +308,10 @@ xconn* xconn_newfd(unsigned fd) {
     xstring_clean(conn->buf);
     xstring_clean(conn->_rbuf);
     xstring_clean(conn->_wbuf);
+    xtask_init(&conn->_rtask);
+    xtask_init(&conn->_wtask);
+    xtask_init(&conn->post_rtask);
+    xtask_init(&conn->post_wtask);
   }
   // init conn status
   conn->_rtimeout = 0;
